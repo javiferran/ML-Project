@@ -4,6 +4,7 @@ library(dplyr)
 library(stringr)
 library(ggplot2)
 
+#Shift + cmd + c
 setwd("/Users/JaviFerrando/Desktop/MLProject")
 
 # Get data
