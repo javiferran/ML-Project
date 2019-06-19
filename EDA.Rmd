@@ -11,22 +11,6 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Table of Contents
-
-* [Introduction](#intro)
-* [Libraries](#libraries)
-* [Data Overview](#overview) 
-* [Historical Performance](#historical)
-    * [Teams](#teams)
-    * [Conferences](#conferences)
-* [Indicators of Regular Season Success](#regseason)
-* [Predictors of Tournament Success](#predictors)
-
-
-## Introduction {#intro}
-
-Although I am not a huge college basketball fan, I find this particular data set fascinating in its richness. Let's dig in and see what we can learn about the history of March Madness. Hopefully along the way, I'll discover something useful to use in your models. 
-
 ## Libraries {#libraries}
 
 ```{r, message = FALSE}
@@ -38,13 +22,15 @@ library(ggplot2)
 library(gridExtra)
 library(ggExtra)
 library(corrplot)
+library(factoextra)
+library(stringr)
+library(FactoMineR)
 
 theme_set(theme_bw())
 
 ```
 
 ```{r}
-#dir <- '/Users/Marcelpv96/Dropbox/MASTER/1rANY/Q2/ML/Project/ML-Project/input/'
 dir <- '/Users/JaviFerrando/Desktop/MLProject/input/'
 setwd("/Users/JaviFerrando/Desktop/MLProject")
 
@@ -63,13 +49,6 @@ tour_enrich <- fread(paste(dir,'NCAATourneyDetailedResultsEnriched.csv',sep=''))
 seas_enrich <- fread(paste(dir,'NCAASeasonDetailedResultsEnriched.csv',sep=''))
 
 ```
-    
-## Historical Performance {#historical}
-
-### Teams {#teams}
-    
-What have been the most successful teams since 1985? We'll attempt to determine this with the metrics: regular season wins, number 1 seeds, tournament wins, and championships. 
-    
 ```{r, fig.width = 10, fig.height = 7}
     
 setkey(teams, TeamID)
@@ -108,9 +87,9 @@ g4 <-
     coord_flip()
 
 grid.arrange(g1, g2, g3, g4, nrow = 2)
-    
 ```
-
+## Historical Performance {#historical}
+    
 ## Indicators of Regular Season Success {#regseason}
 
 Let's now turn to the regular season game statistics. We are interested in knowing how certain statistics correlate with winning vs losing. We will take the regular season detail and first convert it to a more 'long' format with only 1 column of TeamIDs and a factor indicating whether that row corresponds to a win or a loss. Here I also add some additional game statistcs. These include field goal percentage, free throw percentage, offensive/defensive rebounding efficiency, and possessions. These last two come from Laksan Nathan's kernel [here](https://www.kaggle.com/lnatml/feature-engineering-with-advanced-stats).
@@ -143,6 +122,7 @@ win_stats <- seas_enrich[, .(
     DRP = WDR / (WDR + LOR),
     eFG = WeFGP,
     NetRTG = WNetRtg,
+    FTAR = WFTAR,
     POS = 0.96 * (WFGA + WTO + 0.44 * WFTA - WOR)
     )]
 
@@ -172,6 +152,7 @@ los_stats <- seas_enrich[, .(
     DRP = LDR / (LDR + WOR),
     eFG = LeFGP,
     NetRTG = LNetRtg,
+    FTAR = LFTAR,
     POS = 0.96 * (LFGA + LTO + 0.44 * LFTA - LOR)
     )]
 
@@ -185,26 +166,26 @@ Now let's take a look at the distributions of these statistics for winning and l
 
 g1 <- stats_all %>%
     ggplot(aes(x = FGP, fill = Result)) +
-    geom_density(alpha = 0.5) +
-    scale_fill_manual(values = c('skyblue4', 'skyblue3')) + 
+    geom_density(alpha = 0.6) +
+    scale_fill_manual(values = c('#FF6666', '#33FF00')) + 
     labs(x = 'Field Goals %', y = '', title = 'Field Goal M/A Ratio')
 
 g2 <- stats_all %>%
     ggplot(aes(x = FGP2, fill = Result)) +
-    geom_density(alpha = 0.5) +
-    scale_fill_manual(values = c('skyblue4', 'skyblue3')) + 
+    geom_density(alpha = 0.6) +
+    scale_fill_manual(values = c('#FF6666', '#33FF00')) + 
     labs(x = '2-pt Field Goal %', y = '', title = '2 Pt Field Goals M/A Ratio')
 
 g3 <- stats_all %>%
     ggplot(aes(x = FGP3, fill = Result)) +
-    geom_density(alpha = 0.5) +
-    scale_fill_manual(values = c('skyblue4', 'skyblue3')) + 
+    geom_density(alpha = 0.6) +
+    scale_fill_manual(values = c('#FF6666', '#33FF00')) + 
     labs(x = '3-pt Field Goal %', y = '', title = '3 Pt Field Goals M/A Ratio')
 
 g4 <- stats_all %>%
     ggplot(aes(x = FTP, fill = Result)) +
-    geom_density(alpha = 0.5) +
-    scale_fill_manual(values = c('skyblue4', 'skyblue3')) + 
+    geom_density(alpha = 0.6) +
+    scale_fill_manual(values = c('#FF6666', '#33FF00')) + 
     labs(x = 'Free Throw %', y = '', title = 'Free Throw Goals M/A Ratio')
 
 
@@ -214,38 +195,38 @@ grid.arrange(g1, g3, g4, ncol = 3)
 ```{r, warning = FALSE, fig.width = 10, fig.height = 6}
 g5 <- stats_all %>%
     ggplot(aes(x = OR, fill = Result)) +
-    geom_density(alpha = 0.5) +
-    scale_fill_manual(values = c('skyblue4', 'skyblue3')) + 
+    geom_density(alpha = 0.6) +
+    scale_fill_manual(values = c('#FF6666', '#66FF33')) + 
     labs(x = 'Number of Offensive rebounds', y = '', title = 'Offensive Rebounds')
 
 g6 <- stats_all %>%
     ggplot(aes(x = DR, fill = Result)) +
-    geom_density(alpha = 0.5) +
-    scale_fill_manual(values = c('skyblue4', 'skyblue3')) + 
+    geom_density(alpha = 0.6) +
+    scale_fill_manual(values = c('#FF6666', '#66FF33')) + 
     labs(x = 'Number of Defensive rebounds', y = '', title = 'Defensive Rebounds')
 
 g7 <- stats_all %>%
     ggplot(aes(x = AST, fill = Result)) +
-    geom_density(alpha = 0.5) +
-    scale_fill_manual(values = c('skyblue4', 'skyblue3')) + 
+    geom_density(alpha = 0.6) +
+    scale_fill_manual(values = c('#FF6666', '#66FF33')) + 
     labs(x = 'Assists', y = '', title = 'Number of assists')
 
 g8 <- stats_all %>%
     ggplot(aes(x = TO, fill = Result)) +
-    geom_density(alpha = 0.5) +
-    scale_fill_manual(values = c('skyblue4', 'skyblue3')) + 
+    geom_density(alpha = 0.6) +
+    scale_fill_manual(values = c('#FF6666', '#66FF33')) + 
     labs(x = 'Turnovers', y = '', title = 'Number of turnovers')
 
 g9 <- stats_all %>%
     ggplot(aes(x = STL, fill = Result)) +
-    geom_density(alpha = 0.5) +
-    scale_fill_manual(values = c('skyblue4', 'skyblue3')) + 
+    geom_density(alpha = 0.6) +
+    scale_fill_manual(values = c('#FF6666', '#66FF33')) + 
     labs(x = 'Steals', y = '', title = 'Steals per Game')
 
 g10 <- stats_all %>%
     ggplot(aes(x = BLK, fill = Result)) +
-    geom_density(alpha = 0.5) +
-    scale_fill_manual(values = c('skyblue4', 'skyblue3')) + 
+    geom_density(alpha = 0.6) +
+    scale_fill_manual(values = c('#FF6666', '#66FF33')) + 
     labs(x = 'Blocks', y = '', title = 'Blocks per Game')
 
 grid.arrange(g5, g6, g7, g8, ncol = 2)
@@ -261,23 +242,13 @@ One of the obvious predictors for how deep a team goes in the tournament would b
     
 ```{r, fig.width = 10, fig.height = 10}
     
-wins_s <- seas_results[, .(rsW = .N), by = c('WTeamID', 'Season')]
+wins_s <- seas_results[, .(rsW = .N), by = c('WTeamID', 'Season')] #Wins of a team per season
 
 wins_t <- tour_results[!(DayNum %in% c(134, 135)), .(tW = .N), by = c('WTeamID', 'Season')]
 
+#max(wins_t$tW)
 
 wins_teams <- wins_s[wins_t][teams]
-
-wins_teams[!is.na(Season), ] %>%
-    ggplot(aes(x = rsW, y = tW)) + 
-    geom_point() + 
-    geom_smooth(method = 'lm') + 
-    facet_wrap( ~ as.factor(Season)) + 
-    labs(
-        x = 'Regular season wins', 
-        y = 'Tournament wins', 
-        title = 'Tournament Wins by Regular Season Wins')
-    
 ```
     
 In nearly every year, tournament wins is positively correlated with regular season wins. Of course, there are some exceptions - for example in 2000, the relationship is slightly negative! Single-elimination tournaments produce some variations as they leave little room for error. Sometimes strong favorites don't get as far as expected. 
@@ -294,21 +265,8 @@ all_games <- rbindlist(list(wins, losses))
 
 all_games <- all_games[, .(rs_ppg = sum(sum_score) / sum(n_games)), by = c('WTeamID', 'Season')]
 
-all_games[wins_t, on = c('WTeamID', 'Season')] %>%
-    ggplot(aes(x = rs_ppg, y = tW)) + 
-    geom_point() + 
-    geom_smooth(method = 'lm') + 
-    facet_wrap( ~ as.factor(Season)) + 
-    labs(
-        x = 'Regular season average score', 
-        y = 'Tournament wins', 
-        title = 'Tournament Wins by Regular Season Point per Game')
-
 ```
     
-We can see that in each year, there is a positive relationship between regular season points per game and tournament wins. We can also see that the champion each year (as indicated by the point with 6 tournament wins) tends to have a ppg near the top of the range. There also appears to be an outlier. In 1990 there is a team that scored more than 120 points per game! It turns out this is not a bad data point. In 1990 Loyola Marymount was the highest scoring team in Division 1 history with [122 points per game!](https://en.wikipedia.org/wiki/Loyola_Marymount_Lions_men%27s_basketball)
-    
-Of course, going into the tournament, we know a team's seed. How well do seeds predict tournament progress?
     
 ```{r, fig.width = 10, fig.height = 10}
 
@@ -370,8 +328,8 @@ seas_results[, .(avg_win_marg = mean(WScore - LScore)), by = c('WTeamID', 'Seaso
     
 Now let's move beyond the basic stats and use some of the box score data as well. To start, let's create a standardized data frame in wide format with all of the teams regular season stats. We'll create some additional statistics such as various shooting percentages, rebounds per game, steals per game, etc. Because of the format of the data, we first need to get the stats for the games winning teams and losing teams seperately. Then we will bind these row-wise and group by Season and TeamID to calculate the stats. 
     
-```{r, fig.height = 5, fig.width = 10}
-
+```{r, fig.width = 6, fig.height = 3}
+#stats_season -> average
 stats_season <- stats_all[, .(
     FGP = sum(FGM) / sum(FGA),
     FGP3 = sum(FGM3) / sum(FGA3),
@@ -381,6 +339,7 @@ stats_season <- stats_all[, .(
     ASPG = mean(AST),
     TOPG = mean(TO),
     STPG = mean(STL),
+    #MFTAR = mean(FTAR),
     #BLPG = mean(BLK),
     #PFPG = mean(PF),
     MeFG = mean(eFG),
@@ -392,12 +351,58 @@ stats_season <- stats_all[, .(
     
     , by = c('TeamID', 'Season')]
 seas_elos <- fread(paste(dir,'season_elos.csv',sep=''))
+seas_elo_duke <-seas_elos[seas_elos$team_id==1181]
+seas_elo_virginia <-seas_elos[seas_elos$team_id==1438]
+seas_elo_virginia[seas_elo_virginia==1438] <- "Virginia"
+seas_elo_texas <-seas_elos[seas_elos$team_id==1403]
+seas_elo_texas[seas_elo_texas==1403] <- "Texas Tech"
+seas_elo_michigan <-seas_elos[seas_elos$team_id==1277]
+seas_elo_michigan[seas_elo_michigan==1277] <- "Michigan St"
+seas_elo_auburn <-seas_elos[seas_elos$team_id==1120]
+seas_elo_auburn[seas_elo_auburn==1120] <- "Auburn"
+
+elos_plot <- rbind(seas_elo_virginia,seas_elo_texas,seas_elo_michigan,seas_elo_auburn)
+elos_plot$team_id <- as.factor(elos_plot$team_id)
+names(elos_plot) <- c("Team","season","season_elo")
+
+
+ggplot(data=elos_plot, aes(x=season, y=season_elo, group=Team)) +
+  #geom_point(aes(x=seas_elos$season, y=seas_elos$season_elo), size = 3) +
+  geom_line(aes(color=Team))+
+  #scale_color_brewer(palette="Paired")+
+  scale_fill_discrete(name = "Teams") +
+  labs(x = "Year") + labs(y = "Elo Points")+
+  labs(fill = "Dose (mg)")
+
+
+ggplot(data=seas_elo_virginia, aes(x=seas_elo_virginia$season, y=seas_elo_virginia$season_elo)) +
+  #geom_point(aes(x=seas_elos$season, y=seas_elos$season_elo), size = 3) +
+  geom_line(color="blue")+
+  scale_color_brewer(palette="Paired")+
+  theme_minimal() +
+  labs(x = "Year") + labs(y = "Elo Points")+
+  labs(color="Colours")
+
 seas_elos <- seas_elos[seas_elos$season>=2003,]
+
 colnames(seas_elos) <-c("TeamID","Season","Season_elo")
-stats_season <- merge(x = stats_season, y = seas_elos, by=c("TeamID","Season"), all = TRUE)
+stats_season <- merge(x = stats_season, y = seas_elos, by=c("TeamID","Season"), all = FALSE)
 wins_t_2003 <- wins_t[wins_t$Season>=2003,]
-colnames(wins_t_2003) <-c("TeamID","Season","tW")
+colnames(wins_t_2003) <-c("TeamID","Season","Days_Tournament")
 stats_season <- merge(x = stats_season, y = wins_t_2003, by=c("TeamID","Season"), all = FALSE)
+dseeds_tournament <- fread(paste(dir,'NCAATourneySeeds.csv',sep=''))
+dseeds_tournament <- dseeds_tournament %>% 
+  mutate(ranking = as.factor((str_replace(Seed, "[A-Z]",""))), 
+         rank_num = as.numeric(str_replace(ranking, ".[a-z]","")))
+dseeds_tournament <- dseeds_tournament[ , -which(names(dseeds_tournament) %in% c("Seed","ranking"))]
+#names(dseeds_tournament) <- tolower(names(dseeds_tournament))
+stats_season <- merge(x = stats_season, y = dseeds_tournament, by=c("TeamID","Season"), all = FALSE)
+
+pca_crypto <- princomp(~Season_elo+EFG+MPOS+Days_Tournament+MPIE+MNetRTG,cor=TRUE, data=stats_season)
+pca_crypto <- PCA(stats_season,scale.unit = TRUE,graph = FALSE)
+fviz_pca_var(pca_crypto, col.var = "cos2")
+M <- cor(scale(stats_season %>% select (3:18)),method="pearson")
+corrplot(M, method = "circle",type = "upper")
 #corrplot(stats_season, type = "upper", order = "hclust", 
          #tl.col = "black")
 ```
@@ -420,25 +425,114 @@ ggMarginal(g1, type = 'histogram', fill = 'steelblue')
 
 ```
 
+
 We see that the distribution of field goal % appears to have a peak around 0.45. The distribution of free throw percentage peaks near 72%. Interestingly in terms of shooting %, there does not seem to be much of a difference between teams that make the Final Four and the rest of the tournament field in terms of their regular season performance; however it is hard to tell from this plot type. To double-check, let's plot the densities of these two statistics for Final Four teams and the rest of the field.
 
-```{r, fig.width = 10}
+```{r, fig.width = 6, fig.height = 3}
+g1 <- stats_season[wins_t, on = c(TeamID = 'WTeamID', 'Season'), nomatch = 0
+              ][, final_four := tW >= 4] %>%
+    ggplot(aes(x = MPOS, fill = final_four)) + 
+    scale_fill_manual(values = c('skyblue4', 'skyblue3')) + 
+    geom_density(alpha = 0.5) + 
+    labs(x = 'Number of Possessions', title = 'Regular Season Possessions')
+grid.arrange(g1)
+```
+
+```{r, fig.width = 10, fig.height = 5}
 
 g1 <- stats_season[wins_t, on = c(TeamID = 'WTeamID', 'Season'), nomatch = 0
               ][, final_four := tW >= 4] %>%
-    ggplot(aes(x = MeFG, fill = final_four)) + 
-    geom_density(alpha = 0.6) + 
-    labs(x = 'Field goal %', title = 'Regular Season Field Goal % of Tournament Teams')
+    ggplot(aes(x = MPIE, fill = final_four)) + 
+    scale_fill_manual(values = c('skyblue4', 'skyblue3')) + 
+    geom_density(alpha = 0.5) + 
+    labs(x = 'PIE', title = 'Regular Season PIE')
 
 g2 <- stats_season[wins_t, on = c(TeamID = 'WTeamID', 'Season'), nomatch = 0
               ][, final_four := tW >= 4] %>%
     ggplot(aes(x = MNetRTG, fill = final_four)) + 
-    geom_density(alpha = 0.6) + 
-    labs(x = 'Free throw %', title = 'Regular Season Free Throw % of Tournament Teams')
+    scale_fill_manual(values = c('skyblue4', 'skyblue3')) + 
+    geom_density(alpha = 0.5) + 
+    labs(x = 'Net Rating', title = 'Regular Season Net Rating')
 
-grid.arrange(g1, g2, ncol = 2)
+g3 <- stats_season[wins_t, on = c(TeamID = 'WTeamID', 'Season'), nomatch = 0
+              ][, final_four := tW >= 4] %>%
+    ggplot(aes(x = Season_elo, fill = final_four)) + 
+    scale_fill_manual(values = c('skyblue4', 'skyblue3')) + 
+    geom_density(alpha = 0.5) + 
+    labs(x = 'Elo Rating', title = 'Season ending Elo Rating')
+
+g4 <- stats_season[wins_t, on = c(TeamID = 'WTeamID', 'Season'), nomatch = 0
+              ][, final_four := tW >= 4] %>%
+    ggplot(aes(x = rank_num, fill = final_four)) + 
+    scale_fill_manual(values = c('skyblue4', 'skyblue3')) + 
+    geom_density(alpha = 0.5) + 
+    labs(x = 'Seeding position', title = 'Ranking in seeding')
+
+
+grid.arrange(g1, g2, g3, g4, ncol = 2)
 
 ```
+```{r, fig.width = 10, fig.height = 3}
+
+g1 <- stats_season[wins_t, on = c(TeamID = 'WTeamID', 'Season'), nomatch = 0
+              ][, final_four := tW >= 4] %>%
+    ggplot(aes(x = FGP, fill = final_four)) + 
+    scale_fill_manual(values = c('skyblue4', 'skyblue3')) + 
+    geom_density(alpha = 0.5) + 
+    labs(x = 'PIE', title = 'Regular Season PIE')
+
+g2 <- stats_season[wins_t, on = c(TeamID = 'WTeamID', 'Season'), nomatch = 0
+              ][, final_four := tW >= 4] %>%
+    ggplot(aes(x = FGP3, fill = final_four)) + 
+    scale_fill_manual(values = c('skyblue4', 'skyblue3')) + 
+    geom_density(alpha = 0.5) + 
+    labs(x = 'Net Rating', title = 'Regular Season Net Rating')
+
+g3 <- stats_season[wins_t, on = c(TeamID = 'WTeamID', 'Season'), nomatch = 0
+              ][, final_four := tW >= 4] %>%
+    ggplot(aes(x = FTP, fill = final_four)) + 
+    scale_fill_manual(values = c('skyblue4', 'skyblue3')) + 
+    geom_density(alpha = 0.5) + 
+    labs(x = 'Elo Rating', title = 'Season ending Elo Rating')
+g4 <- stats_season[wins_t, on = c(TeamID = 'WTeamID', 'Season'), nomatch = 0
+              ][, final_four := tW >= 4] %>%
+    ggplot(aes(x = ORPG, fill = final_four)) + 
+    scale_fill_manual(values = c('skyblue4', 'skyblue3')) + 
+    geom_density(alpha = 0.5) + 
+    labs(x = 'PIE', title = 'Regular Season PIE')
+
+g5 <- stats_season[wins_t, on = c(TeamID = 'WTeamID', 'Season'), nomatch = 0
+              ][, final_four := tW >= 4] %>%
+    ggplot(aes(x = DRPG, fill = final_four)) + 
+    scale_fill_manual(values = c('skyblue4', 'skyblue3')) + 
+    geom_density(alpha = 0.5) + 
+    labs(x = 'Net Rating', title = 'Regular Season Net Rating')
+
+g6 <- stats_season[wins_t, on = c(TeamID = 'WTeamID', 'Season'), nomatch = 0
+              ][, final_four := tW >= 4] %>%
+    ggplot(aes(x = ASPG, fill = final_four)) + 
+    scale_fill_manual(values = c('skyblue4', 'skyblue3')) + 
+    geom_density(alpha = 0.5) + 
+    labs(x = 'Elo Rating', title = 'Season ending Elo Rating')
+g7 <- stats_season[wins_t, on = c(TeamID = 'WTeamID', 'Season'), nomatch = 0
+              ][, final_four := tW >= 4] %>%
+    ggplot(aes(x = TOPG, fill = final_four)) + 
+    scale_fill_manual(values = c('skyblue4', 'skyblue3')) + 
+    geom_density(alpha = 0.5) + 
+    labs(x = 'PIE', title = 'Regular Season PIE')
+
+g8 <- stats_season[wins_t, on = c(TeamID = 'WTeamID', 'Season'), nomatch = 0
+              ][, final_four := tW >= 4] %>%
+    ggplot(aes(x = STPG, fill = final_four)) + 
+    scale_fill_manual(values = c('skyblue4', 'skyblue3')) + 
+    geom_density(alpha = 0.5) + 
+    labs(x = 'Net Rating', title = 'Regular Season Net Rating')
+
+
+grid.arrange(g1, g2, g3, g4, g5, g6, g7, g8, ncol = 4)
+
+```
+
 
 From the density plots, it actually appears that Final Four teams do shoot better from the floor during the regular season. Non Final Four teams shoot around 0.45 during the regular season and Final Four teams seem to shoot around 0.475. It is very important to keep in mind however that the sample size for Final Four teams is much smaller than the sample size for the rest of the tournament field. Therefore its unclear whether we can consider this difference statistically significant. For free throw percentage, there does not appear to be much of a difference. 
 
@@ -448,11 +542,11 @@ Let's get a better idea of whether the difference in field goal percentage is re
 
 fgp_noff <- stats_season[wins_t, on = c(TeamID = 'WTeamID', 'Season'), nomatch = 0
               ][, final_four := tW >= 4
-                ][final_four == FALSE,  FGP]
+                ][final_four == FALSE,  rank_num]
 
 fgp_ff <- stats_season[wins_t, on = c(TeamID = 'WTeamID', 'Season'), nomatch = 0
               ][, final_four := tW >= 4
-                ][final_four == TRUE,  FGP]
+                ][final_four == TRUE,  rank_num]
 
 t.test(fgp_noff, fgp_ff, alternative = 'two.sided', var.equal = FALSE)
 
@@ -551,17 +645,4 @@ g1 <- stats_season[wins_t, on = c(TeamID = 'WTeamID', 'Season'), nomatch = 0
 
 grid.arrange(g1)
 
-```
-
-```{r, fig.width = 10}
-DecisionTree = rpart(disease ~ ., data=train,control=rpart.control(cp=0.001, xval=10))
-printcp(DecisionTree)
-
-treeSize = DecisionTree$cptable[,2]+1 #nsplit
-treeImpurity = DecisionTree$cptable[,3] #rel error
-cvImpurity = DecisionTree$cptable[,4] #xerror
-
-plot(treeSize, treeImpurity, main="R(T)", xlab="size of the tree", ylab="Relativity Impurity", type="o", col='red') 
-lines(treeSize, cvImpurity ,type="o", col='blue')
-legend("topright", c("All training data","CV training data"), col=c('red', 'blue'), lty=1)
 ```
