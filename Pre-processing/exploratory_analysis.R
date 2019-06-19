@@ -1,5 +1,14 @@
 dir <- '/Users/Marcelpv96/Dropbox/MASTER/1rANY/Q2/ML/Project/ML-Project/input/'
 
+library(data.table)
+library(dplyr)
+library(magrittr)
+library(ggplot2)
+library(gridExtra)
+library(ggExtra)
+library(corrplot)
+
+
 # LOAD USED CSV FILES #
 teams <- fread(paste(dir,'Teams.csv',sep=''))
 seasons <- fread(paste(dir,'Seasons.csv',sep=''))
@@ -181,3 +190,40 @@ g10 <- stats_all %>%
   labs(x = 'Blocks', y = '', title = 'Blocks per Game')
 
 grid.arrange(g5, g6, g7, g8, g9, g10, ncol = 2)
+
+
+
+# When advanced statistics are applied:
+seas_enriched <- fread("NCAASeasonDetailedResultsEnriched.csv")
+
+win_advanced_stats <- seas_enriched[, .(
+  Season,
+  TeamID = WTeamID,
+  Outcome = rep('W', .N),
+  FGM = WFGM,
+  Pos = WPos,
+  OffRtg = WOffRtg,
+  DefRtg = WDefRtg,
+  NetRtg = WNetRtg,
+  PIE = WPIE
+)]
+
+los_advanced_stats <- seas_enriched[, .(
+  Season,
+  TeamID = WTeamID,
+  Outcome = rep('W', .N),
+  FGM = LFGM,
+  Pos = LPos,
+  OffRtg = LOffRtg,
+  DefRtg = LDefRtg,
+  NetRtg = LNetRtg,
+  PIE = LPIE
+)]
+
+
+gPie <- win_advanced_stats %>%
+  ggplot(aes(x = BLK, fill = Outcome)) +
+  geom_density(alpha = 0.7) +
+  scale_fill_manual(values = c('darkblue', 'grey')) + 
+  labs(x = 'Blocks', y = '', title = 'Blocks per Game')
+
