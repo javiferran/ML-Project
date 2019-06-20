@@ -646,3 +646,61 @@ g1 <- stats_season[wins_t, on = c(TeamID = 'WTeamID', 'Season'), nomatch = 0
 grid.arrange(g1)
 
 ```
+
+
+```{r, fig.width = 10}
+library(MLmetrics)
+seq(0, 1)
+eq = function(x){LogLoss(y_pred = x, y_true = 1)}
+eq(0:10)
+plot(eq(0:10), type='l')
+eq2=function(x){-log(x)}
+eq3=function(x){-log(1-x)}
+
+qplot(c(0,1), fun=eq, stat="function", geom="line", xlab="x", ylab="y")
+ggplot(data.frame(x=c(0, 1)), aes(x=x)) + stat_function(fun=eq2, geom="line") + xlab("x") + ylab("y") + stat_function(fun=eq3, geom="line")
+
+```
+
+```{r, fig.width = 10}
+#PCA
+pca_ncaa <- PCA(train, quali.sup = 6, scale.unit = TRUE,  graph = TRUE)
+
+
+```
+```{r}
+train_tree <- train
+
+DecisionTree = rpart(team1win ~ ., data=train_tree,control=rpart.control(cp=0.001, xval=10))
+printcp(DecisionTree)
+
+treeSize = DecisionTree$cptable[,2]+1 #nsplit
+treeImpurity = DecisionTree$cptable[,3] #rel error
+cvImpurity = DecisionTree$cptable[,4] #xerror
+
+plot(treeSize, treeImpurity, main="R(T)", xlab="size of the tree", ylab="Relativity Impurity", type="o", col='red') 
+lines(treeSize, cvImpurity ,type="o", col='blue')
+legend("topright", c("All training data","CV training data"), col=c('red', 'blue'), lty=1)
+
+
+```
+```{r, echo=FALSE}
+DecisionTree$cptable = as.data.frame(DecisionTree $cptable)
+ind = which.min(DecisionTree$cptable$xerror)
+xerr <-DecisionTree$cptable$xerror[ind]
+xstd <-DecisionTree$cptable$xstd[ind]
+
+i = 1
+while (DecisionTree$cptable$xerror[i] > xerr+xstd){
+  i = i+1
+}
+alfa = DecisionTree$cptable$CP[i]
+
+optimal <- prune(DecisionTree, cp=alfa)
+par(mfrow = c(1,1), xpd = NA)
+plot(optimal)
+text(optimal, use.n=T,cex=0.8,col="blue")
+```
+```{r, echo=FALSE}
+prediction = predict(optimal, test)
+```
