@@ -1,0 +1,605 @@
+\documentclass[]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Ligatures=TeX,Scale=MatchLowercase}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{%
+\usepackage{microtype}
+\UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\hypersetup{unicode=true,
+            pdftitle={MVA Final Project},
+            pdfauthor={Javier Ferrando Monsonis; Marcel Porta Valles; Mehmet Fatih ??agil},
+            pdfborder={0 0 0},
+            breaklinks=true}
+\urlstyle{same}  % don't use monospace font for urls
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\usepackage{longtable,booktabs}
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+\IfFileExists{parskip.sty}{%
+\usepackage{parskip}
+}{% else
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{0}
+% Redefines (sub)paragraphs to behave more like sections
+\ifx\paragraph\undefined\else
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+\let\oldsubparagraph\subparagraph
+\renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+
+%%% Use protect on footnotes to avoid problems with footnotes in titles
+\let\rmarkdownfootnote\footnote%
+\def\footnote{\protect\rmarkdownfootnote}
+
+%%% Change title format to be more compact
+\usepackage{titling}
+
+% Create subtitle command for use in maketitle
+\newcommand{\subtitle}[1]{
+  \posttitle{
+    \begin{center}\large#1\end{center}
+    }
+}
+
+\setlength{\droptitle}{-2em}
+
+  \title{MVA Final Project}
+    \pretitle{\vspace{\droptitle}\centering\huge}
+  \posttitle{\par}
+    \author{Javier Ferrando Monsonis \\ Marcel Porta Valles \\ Mehmet Fatih ??agil}
+    \preauthor{\centering\large\emph}
+  \postauthor{\par}
+      \predate{\centering\large\emph}
+  \postdate{\par}
+    \date{February 20, 2018}
+
+
+\begin{document}
+\maketitle
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(magrittr)}
+\KeywordTok{library}\NormalTok{(ggplot2)}
+\KeywordTok{library}\NormalTok{(dplyr)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Attaching package: 'dplyr'
+\end{verbatim}
+
+\begin{verbatim}
+## The following objects are masked from 'package:stats':
+## 
+##     filter, lag
+\end{verbatim}
+
+\begin{verbatim}
+## The following objects are masked from 'package:base':
+## 
+##     intersect, setdiff, setequal, union
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(stringr)}
+\KeywordTok{library}\NormalTok{(ggplot2)}
+
+\KeywordTok{library}\NormalTok{(data.table)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Attaching package: 'data.table'
+\end{verbatim}
+
+\begin{verbatim}
+## The following objects are masked from 'package:dplyr':
+## 
+##     between, first, last
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(dplyr)}
+\KeywordTok{library}\NormalTok{(magrittr)}
+\KeywordTok{library}\NormalTok{(ggplot2)}
+\KeywordTok{library}\NormalTok{(gridExtra)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Attaching package: 'gridExtra'
+\end{verbatim}
+
+\begin{verbatim}
+## The following object is masked from 'package:dplyr':
+## 
+##     combine
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(ggExtra)}
+\KeywordTok{library}\NormalTok{(corrplot)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## corrplot 0.84 loaded
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(factoextra)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Welcome! Related Books: `Practical Guide To Cluster Analysis in R` at https://goo.gl/13EFCZ
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(stringr)}
+\KeywordTok{library}\NormalTok{(FactoMineR)}
+\CommentTok{#library(kableExtra)}
+\KeywordTok{library}\NormalTok{(knitr)}
+
+\KeywordTok{setwd}\NormalTok{(}\StringTok{"/Users/JaviFerrando/Desktop/MLProject/"}\NormalTok{)}
+\NormalTok{dir <-}\StringTok{ '/Users/JaviFerrando/Desktop/MLProject/input/'}
+
+\CommentTok{# Get data}
+\NormalTok{dseeds_tournament <-}\StringTok{ }\KeywordTok{fread}\NormalTok{(}\KeywordTok{paste}\NormalTok{(dir,}\StringTok{'NCAATourneySeeds.csv'}\NormalTok{,}\DataTypeTok{sep=}\StringTok{''}\NormalTok{))}
+\NormalTok{dg_tournment <-}\StringTok{ }\KeywordTok{fread}\NormalTok{(}\KeywordTok{paste}\NormalTok{(dir,}\StringTok{'NCAATourneyCompactResults.csv'}\NormalTok{,}\DataTypeTok{sep=}\StringTok{''}\NormalTok{))}
+
+
+\CommentTok{# keep only season, daynum, win and loss team ids for the dg_tournament data}
+\NormalTok{outcome_tournament <-}\StringTok{ }\NormalTok{dg_tournment }\OperatorTok{%>%}\StringTok{ }\KeywordTok{select}\NormalTok{(Season, DayNum, WTeamID, LTeamID)}
+\KeywordTok{names}\NormalTok{(outcome_tournament) <-}\StringTok{ }\KeywordTok{tolower}\NormalTok{(}\KeywordTok{names}\NormalTok{(outcome_tournament))}
+
+\CommentTok{# randomize winning and losing team into team 1 and team 2 (necessary for probabilities later) and drop other ids}
+\NormalTok{outcome_tournament <-}\StringTok{ }\NormalTok{outcome_tournament }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{rand =} \KeywordTok{runif}\NormalTok{(}\KeywordTok{dim}\NormalTok{(outcome_tournament)[}\DecValTok{1}\NormalTok{]), }
+         \DataTypeTok{team1id =} \KeywordTok{ifelse}\NormalTok{(rand }\OperatorTok{>=}\StringTok{ }\FloatTok{0.5}\NormalTok{, wteamid, lteamid),}
+         \DataTypeTok{team2id =} \KeywordTok{ifelse}\NormalTok{(rand }\OperatorTok{<}\FloatTok{0.5}\NormalTok{, wteamid, lteamid),}
+         \DataTypeTok{team1win =} \KeywordTok{ifelse}\NormalTok{(team1id }\OperatorTok{==}\StringTok{ }\NormalTok{wteamid, }\DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{)) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{select}\NormalTok{(}\OperatorTok{-}\NormalTok{rand, }\OperatorTok{-}\NormalTok{wteamid,}\OperatorTok{-}\NormalTok{lteamid)}
+
+\CommentTok{# Add seeding information to games: }
+
+\CommentTok{# make seeds 1-16 without letters (except for certain seed)}
+\NormalTok{dseeds_tournament <-}\StringTok{ }\NormalTok{dseeds_tournament }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{ranking =} \KeywordTok{as.factor}\NormalTok{((}\KeywordTok{str_replace}\NormalTok{(Seed, }\StringTok{"[A-Z]"}\NormalTok{,}\StringTok{""}\NormalTok{))), }
+         \DataTypeTok{rank_num =} \KeywordTok{as.numeric}\NormalTok{(}\KeywordTok{str_replace}\NormalTok{(ranking, }\StringTok{".[a-z]"}\NormalTok{,}\StringTok{""}\NormalTok{)))}
+\KeywordTok{names}\NormalTok{(dseeds_tournament) <-}\StringTok{ }\KeywordTok{tolower}\NormalTok{(}\KeywordTok{names}\NormalTok{(dseeds_tournament))}
+
+\CommentTok{# team 1}
+\NormalTok{outcome_tournament <-}\StringTok{ }\NormalTok{outcome_tournament }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{left_join}\NormalTok{(}
+    \KeywordTok{select}\NormalTok{(dseeds_tournament, }\DataTypeTok{t1_rank =}\NormalTok{ ranking, }\DataTypeTok{t1_rank_n =}\NormalTok{ rank_num, teamid, season), }
+    \DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"team1id"}\NormalTok{=}\StringTok{"teamid"}\NormalTok{,}\StringTok{"season"}\NormalTok{=}\StringTok{"season"}\NormalTok{)) }
+
+\CommentTok{# team 2}
+\NormalTok{outcome_tournament <-}\StringTok{ }\NormalTok{outcome_tournament }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{left_join}\NormalTok{(}
+    \KeywordTok{select}\NormalTok{(dseeds_tournament, }\DataTypeTok{t2_rank =}\NormalTok{ ranking, }\DataTypeTok{t2_rank_n =}\NormalTok{ rank_num, teamid, season), }
+    \DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"team2id"}\NormalTok{=}\StringTok{"teamid"}\NormalTok{,}\StringTok{"season"}\NormalTok{=}\StringTok{"season"}\NormalTok{)) }
+
+
+\CommentTok{# replace NA seeds}
+\NormalTok{outcome_tournament <-}\StringTok{ }\NormalTok{outcome_tournament }\OperatorTok{%>%}\StringTok{ }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{t1_rank =} \KeywordTok{ifelse}\NormalTok{(}\KeywordTok{is.na}\NormalTok{(t1_rank), }\FloatTok{8.5}\NormalTok{, t1_rank),}
+                                                    \DataTypeTok{t2_rank =} \KeywordTok{ifelse}\NormalTok{(}\KeywordTok{is.na}\NormalTok{(t2_rank), }\FloatTok{8.5}\NormalTok{, t2_rank),}
+                                                    \DataTypeTok{t1_rank_n =} \KeywordTok{ifelse}\NormalTok{(}\KeywordTok{is.na}\NormalTok{(t1_rank_n), }\FloatTok{8.5}\NormalTok{, t1_rank_n),}
+                                                    \DataTypeTok{t2_rank_n =} \KeywordTok{ifelse}\NormalTok{(}\KeywordTok{is.na}\NormalTok{(t2_rank_n), }\FloatTok{8.5}\NormalTok{, t2_rank_n),}
+                                                    \DataTypeTok{diff_rank =}\NormalTok{ t1_rank_n }\OperatorTok{-}\StringTok{ }\NormalTok{t2_rank_n)}
+
+
+
+\NormalTok{season_elos <-}\StringTok{ }\KeywordTok{read.csv}\NormalTok{(}\KeywordTok{paste}\NormalTok{(dir,}\StringTok{'season_elos.csv'}\NormalTok{,}\DataTypeTok{sep=}\StringTok{''}\NormalTok{)) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{rename}\NormalTok{(}\DataTypeTok{teamid =}\NormalTok{ team_id)}
+
+
+\CommentTok{#Add season_elos (for t1 and t2) to outcome tournament}
+\CommentTok{# Join team 1 data}
+\NormalTok{outcome_tournament <-}\StringTok{ }\NormalTok{outcome_tournament }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{left_join}\NormalTok{(}
+    \KeywordTok{select}\NormalTok{(season_elos, }
+\NormalTok{           season, }
+\NormalTok{           teamid, }
+           \DataTypeTok{t1_season_elo =}\NormalTok{ season_elo),}
+    \DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"team1id"}\NormalTok{ =}\StringTok{ "teamid"}\NormalTok{,}\StringTok{"season"}\NormalTok{ =}\StringTok{ "season"}\NormalTok{))}
+
+
+\CommentTok{# Join team 2 data}
+\NormalTok{outcome_tournament <-}\StringTok{ }\NormalTok{outcome_tournament }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{left_join}\NormalTok{(}
+    \KeywordTok{select}\NormalTok{(season_elos, }
+\NormalTok{           season, }
+\NormalTok{           teamid, }
+           \DataTypeTok{t2_season_elo =}\NormalTok{ season_elo),}
+    \DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"team2id"}\NormalTok{ =}\StringTok{ "teamid"}\NormalTok{,}\StringTok{"season"}\NormalTok{ =}\StringTok{ "season"}\NormalTok{))}
+
+
+\CommentTok{# Compute ELO probabilities for the game, and the difference in ELO scores}
+
+\NormalTok{outcome_tournament <-}\StringTok{ }\NormalTok{outcome_tournament }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{elo_diff =}\NormalTok{ t1_season_elo }\OperatorTok{-}\StringTok{ }\NormalTok{t2_season_elo,}
+         \DataTypeTok{elo_prob_1 =} \DecValTok{1}\OperatorTok{/}\NormalTok{(}\DecValTok{10}\OperatorTok{^}\NormalTok{(}\OperatorTok{-}\NormalTok{elo_diff}\OperatorTok{/}\DecValTok{400}\NormalTok{)}\OperatorTok{+}\DecValTok{1}\NormalTok{)}
+\NormalTok{  )}
+
+\NormalTok{################################}
+\NormalTok{outcome_tournament <-}\StringTok{ }\NormalTok{outcome_tournament[outcome_tournament}\OperatorTok{$}\NormalTok{season}\OperatorTok{>=}\DecValTok{2003}\NormalTok{,]}
+
+
+\NormalTok{################################################################################################################################}
+
+\CommentTok{#Add advanced statistics}
+
+\NormalTok{seas_enrich <-}\StringTok{ }\KeywordTok{fread}\NormalTok{(}\KeywordTok{paste}\NormalTok{(dir,}\StringTok{'NCAASeasonDetailedResultsEnriched.csv'}\NormalTok{,}\DataTypeTok{sep=}\StringTok{''}\NormalTok{))}
+
+\NormalTok{win_stats <-}\StringTok{ }\NormalTok{seas_enrich[, .(}
+\NormalTok{  Season,}
+  \DataTypeTok{TeamID =}\NormalTok{ WTeamID,}
+  \DataTypeTok{Result =} \KeywordTok{rep}\NormalTok{(}\StringTok{'W'}\NormalTok{, .N),}
+  \DataTypeTok{FGM =}\NormalTok{ WFGM,}
+  \DataTypeTok{FGA =}\NormalTok{ WFGA,}
+  \DataTypeTok{FGP =}\NormalTok{ WFGM }\OperatorTok{/}\StringTok{ }\NormalTok{WFGA,}
+  \DataTypeTok{FGP2 =}\NormalTok{ (WFGM }\OperatorTok{-}\StringTok{ }\NormalTok{WFGM3) }\OperatorTok{/}\StringTok{ }\NormalTok{(WFGA }\OperatorTok{-}\StringTok{ }\NormalTok{WFGA3),}
+  \DataTypeTok{FGM3 =}\NormalTok{ WFGM3,}
+  \DataTypeTok{FGA3 =}\NormalTok{ WFGA3,}
+  \DataTypeTok{FGP3 =}\NormalTok{ WFGM3 }\OperatorTok{/}\StringTok{ }\NormalTok{WFGA3,}
+  \DataTypeTok{FTM =}\NormalTok{ WFTM,}
+  \DataTypeTok{FTA =}\NormalTok{ WFTA,}
+  \DataTypeTok{FTP =}\NormalTok{ WFTM }\OperatorTok{/}\StringTok{ }\NormalTok{WFTA,}
+  \DataTypeTok{OR =}\NormalTok{ WOR,}
+  \DataTypeTok{DR =}\NormalTok{ WDR,}
+  \DataTypeTok{AST =}\NormalTok{ WAst,}
+  \DataTypeTok{TO =}\NormalTok{ WTO,}
+  \DataTypeTok{STL =}\NormalTok{ WStl,}
+  \DataTypeTok{BLK =}\NormalTok{ WBlk,}
+  \DataTypeTok{PF =}\NormalTok{ WPF,}
+  \DataTypeTok{PIE =}\NormalTok{ WPIE,}
+  \DataTypeTok{ORP =}\NormalTok{ WOR }\OperatorTok{/}\StringTok{ }\NormalTok{(WOR }\OperatorTok{+}\StringTok{ }\NormalTok{LDR),}
+  \DataTypeTok{DRP =}\NormalTok{ WDR }\OperatorTok{/}\StringTok{ }\NormalTok{(WDR }\OperatorTok{+}\StringTok{ }\NormalTok{LOR),}
+  \DataTypeTok{eFG =}\NormalTok{ WeFGP,}
+  \DataTypeTok{NetRTG =}\NormalTok{ WNetRtg,}
+  \DataTypeTok{POS =} \FloatTok{0.96} \OperatorTok{*}\StringTok{ }\NormalTok{(WFGA }\OperatorTok{+}\StringTok{ }\NormalTok{WTO }\OperatorTok{+}\StringTok{ }\FloatTok{0.44} \OperatorTok{*}\StringTok{ }\NormalTok{WFTA }\OperatorTok{-}\StringTok{ }\NormalTok{WOR)}
+\NormalTok{)]}
+
+\NormalTok{los_stats <-}\StringTok{ }\NormalTok{seas_enrich[, .(}
+\NormalTok{  Season,}
+  \DataTypeTok{TeamID =}\NormalTok{ LTeamID,}
+  \DataTypeTok{Result =} \KeywordTok{rep}\NormalTok{(}\StringTok{'L'}\NormalTok{, .N),}
+  \DataTypeTok{FGM =}\NormalTok{ LFGM,}
+  \DataTypeTok{FGA =}\NormalTok{ LFGA,}
+  \DataTypeTok{FGP =}\NormalTok{ LFGM }\OperatorTok{/}\StringTok{ }\NormalTok{LFGA,}
+  \DataTypeTok{FGP2 =}\NormalTok{ (LFGM }\OperatorTok{-}\StringTok{ }\NormalTok{LFGM3) }\OperatorTok{/}\StringTok{ }\NormalTok{(LFGA }\OperatorTok{-}\StringTok{ }\NormalTok{LFGA3),}
+  \DataTypeTok{FGM3 =}\NormalTok{ LFGM3,}
+  \DataTypeTok{FGA3 =}\NormalTok{ LFGA3,}
+  \DataTypeTok{FGP3 =}\NormalTok{ LFGM3 }\OperatorTok{/}\StringTok{ }\NormalTok{LFGA3,}
+  \DataTypeTok{FTM =}\NormalTok{ LFTM,}
+  \DataTypeTok{FTA =}\NormalTok{ LFTA,}
+  \DataTypeTok{FTP =}\NormalTok{ LFTM }\OperatorTok{/}\StringTok{ }\NormalTok{LFTA,}
+  \DataTypeTok{OR =}\NormalTok{ LOR,}
+  \DataTypeTok{DR =}\NormalTok{ LDR,}
+  \DataTypeTok{AST =}\NormalTok{ LAst,}
+  \DataTypeTok{TO =}\NormalTok{ LTO,}
+  \DataTypeTok{STL =}\NormalTok{ LStl,}
+  \DataTypeTok{BLK =}\NormalTok{ LBlk,}
+  \DataTypeTok{PF =}\NormalTok{ LPF,}
+  \DataTypeTok{PIE =}\NormalTok{ LPIE,}
+  \DataTypeTok{ORP =}\NormalTok{ (LOR }\OperatorTok{/}\StringTok{ }\NormalTok{(LOR }\OperatorTok{+}\StringTok{ }\NormalTok{WDR)),}
+  \DataTypeTok{DRP =}\NormalTok{ LDR }\OperatorTok{/}\StringTok{ }\NormalTok{(LDR }\OperatorTok{+}\StringTok{ }\NormalTok{WOR),}
+  \DataTypeTok{eFG =}\NormalTok{ LeFGP,}
+  \DataTypeTok{NetRTG =}\NormalTok{ LNetRtg,}
+  \DataTypeTok{POS =} \FloatTok{0.96} \OperatorTok{*}\StringTok{ }\NormalTok{(LFGA }\OperatorTok{+}\StringTok{ }\NormalTok{LTO }\OperatorTok{+}\StringTok{ }\FloatTok{0.44} \OperatorTok{*}\StringTok{ }\NormalTok{LFTA }\OperatorTok{-}\StringTok{ }\NormalTok{LOR)}
+\NormalTok{)]}
+
+\NormalTok{stats_all <-}\StringTok{ }\KeywordTok{rbindlist}\NormalTok{(}\KeywordTok{list}\NormalTok{(win_stats, los_stats))}
+
+
+\NormalTok{stats_season <-}\StringTok{ }\NormalTok{stats_all[, .(}
+  \DataTypeTok{FGP =} \KeywordTok{sum}\NormalTok{(FGM) }\OperatorTok{/}\StringTok{ }\KeywordTok{sum}\NormalTok{(FGA),}
+  \DataTypeTok{FGP3 =} \KeywordTok{sum}\NormalTok{(FGM3) }\OperatorTok{/}\StringTok{ }\KeywordTok{sum}\NormalTok{(FGA3),}
+  \DataTypeTok{FTP =} \KeywordTok{sum}\NormalTok{(FTM) }\OperatorTok{/}\StringTok{ }\KeywordTok{sum}\NormalTok{(FTA),}
+  \DataTypeTok{ORPG =} \KeywordTok{mean}\NormalTok{(OR),}
+  \DataTypeTok{DRPG =} \KeywordTok{mean}\NormalTok{(DR),}
+  \DataTypeTok{ASPG =} \KeywordTok{mean}\NormalTok{(AST),}
+  \DataTypeTok{TOPG =} \KeywordTok{mean}\NormalTok{(TO),}
+  \DataTypeTok{STPG =} \KeywordTok{mean}\NormalTok{(STL),}
+  \CommentTok{#BLPG = mean(BLK),}
+  \CommentTok{#PFPG = mean(PF),}
+  \DataTypeTok{MeFG =} \KeywordTok{mean}\NormalTok{(eFG),}
+  \DataTypeTok{MNetRTG =} \KeywordTok{mean}\NormalTok{(NetRTG),}
+  \CommentTok{#MORP = mean(ORP),}
+  \DataTypeTok{MPIE =} \KeywordTok{mean}\NormalTok{(PIE),}
+  \DataTypeTok{MPOS =} \KeywordTok{mean}\NormalTok{(POS),}
+  \DataTypeTok{EFG =}\NormalTok{ (}\KeywordTok{mean}\NormalTok{(FGM)}\OperatorTok{+}\FloatTok{0.5}\OperatorTok{*}\KeywordTok{mean}\NormalTok{(FGM3))}\OperatorTok{/}\KeywordTok{mean}\NormalTok{(FGA))}
+  
+\NormalTok{  , by =}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{'TeamID'}\NormalTok{, }\StringTok{'Season'}\NormalTok{)]}
+
+\NormalTok{################################################################################################################################}
+\CommentTok{#MPIE feature}
+
+\CommentTok{# Join team 1 data}
+\NormalTok{outcome_tournament <-}\StringTok{ }\NormalTok{outcome_tournament }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{left_join}\NormalTok{(}
+    \KeywordTok{select}\NormalTok{(stats_season, }
+\NormalTok{           Season, }
+\NormalTok{           TeamID, }
+           \DataTypeTok{t1_mpie =}\NormalTok{ MPIE),}
+    \DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"team1id"}\NormalTok{ =}\StringTok{ "TeamID"}\NormalTok{,}\StringTok{"season"}\NormalTok{ =}\StringTok{ "Season"}\NormalTok{))}
+
+\CommentTok{# Join team 2 data}
+\NormalTok{outcome_tournament <-}\StringTok{ }\NormalTok{outcome_tournament }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{left_join}\NormalTok{(}
+    \KeywordTok{select}\NormalTok{(stats_season, }
+\NormalTok{           Season, }
+\NormalTok{           TeamID, }
+           \DataTypeTok{t2_mpie =}\NormalTok{ MPIE),}
+    \DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"team2id"}\NormalTok{ =}\StringTok{ "TeamID"}\NormalTok{,}\StringTok{"season"}\NormalTok{ =}\StringTok{ "Season"}\NormalTok{))}
+
+\NormalTok{################################}
+\CommentTok{#Netrtg feature}
+
+\CommentTok{# Join team 1 data}
+\NormalTok{outcome_tournament <-}\StringTok{ }\NormalTok{outcome_tournament }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{left_join}\NormalTok{(}
+    \KeywordTok{select}\NormalTok{(stats_season, }
+\NormalTok{           Season, }
+\NormalTok{           TeamID, }
+           \DataTypeTok{t1_netrtg =}\NormalTok{ MNetRTG),}
+    \DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"team1id"}\NormalTok{ =}\StringTok{ "TeamID"}\NormalTok{,}\StringTok{"season"}\NormalTok{ =}\StringTok{ "Season"}\NormalTok{))}
+
+\CommentTok{# Join team 2 data}
+\NormalTok{outcome_tournament <-}\StringTok{ }\NormalTok{outcome_tournament }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{left_join}\NormalTok{(}
+    \KeywordTok{select}\NormalTok{(stats_season, }
+\NormalTok{           Season, }
+\NormalTok{           TeamID, }
+           \DataTypeTok{t2_netrtg =}\NormalTok{ MNetRTG),}
+    \DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"team2id"}\NormalTok{ =}\StringTok{ "TeamID"}\NormalTok{,}\StringTok{"season"}\NormalTok{ =}\StringTok{ "Season"}\NormalTok{))}
+
+
+
+\NormalTok{### Load data}
+
+\CommentTok{#sample_submission <- read.csv(paste(dir,'SampleSubmissionStage2.csv',sep=''))#2019 every possible matchup -> can only check by submitting to Kaggle}
+\NormalTok{sample_submission <-}\StringTok{ }\KeywordTok{read.csv}\NormalTok{(}\KeywordTok{paste}\NormalTok{(dir,}\StringTok{'SampleSubmissionStage1.csv'}\NormalTok{,}\DataTypeTok{sep=}\StringTok{''}\NormalTok{))}\CommentTok{#2014-2018 every possible matchup }
+
+
+
+
+\NormalTok{#####################################################################################################}
+\CommentTok{#d_ss -> same as outcome_tournament but with sample_submission format (every possible matchup)}
+
+\NormalTok{### Join team data and ranking data}
+
+\NormalTok{d_ss <-}\StringTok{ }\NormalTok{sample_submission}
+
+
+\CommentTok{# Add season, team1id and team2id columns from sample submission ID}
+\NormalTok{d_ss <-}\StringTok{ }\NormalTok{d_ss }\OperatorTok{%>%}\StringTok{ }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{season =} \KeywordTok{as.numeric}\NormalTok{(}\KeywordTok{gsub}\NormalTok{(}\StringTok{"(.*)_(.*)_(.*)"}\NormalTok{,ID, }\DataTypeTok{replacement =} \StringTok{"}\CharTok{\textbackslash{}\textbackslash{}}\StringTok{1"}\NormalTok{)), }
+                        \DataTypeTok{team1id =}  \KeywordTok{as.numeric}\NormalTok{(}\KeywordTok{gsub}\NormalTok{(}\StringTok{"(.*)_(.*)_(.*)"}\NormalTok{,ID, }\DataTypeTok{replacement =} \StringTok{"}\CharTok{\textbackslash{}\textbackslash{}}\StringTok{2"}\NormalTok{)),}
+                        \DataTypeTok{team2id =}  \KeywordTok{as.numeric}\NormalTok{(}\KeywordTok{gsub}\NormalTok{(}\StringTok{"(.*)_(.*)_(.*)"}\NormalTok{,ID, }\DataTypeTok{replacement =} \StringTok{"}\CharTok{\textbackslash{}\textbackslash{}}\StringTok{3"}\NormalTok{)))}
+
+\CommentTok{# Add rank data}
+
+\CommentTok{# team 1}
+\NormalTok{d_ss <-}\StringTok{ }\NormalTok{d_ss }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{left_join}\NormalTok{(}
+\NormalTok{    dplyr}\OperatorTok{::}\KeywordTok{select}\NormalTok{(dseeds_tournament, }\DataTypeTok{t1_rank =}\NormalTok{ ranking, }\DataTypeTok{t1_rank_n =}\NormalTok{ rank_num, teamid, season), }
+    \DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"team1id"}\NormalTok{=}\StringTok{"teamid"}\NormalTok{,}\StringTok{"season"}\NormalTok{=}\StringTok{"season"}\NormalTok{)) }
+
+\CommentTok{# team 2}
+\NormalTok{d_ss <-}\StringTok{ }\NormalTok{d_ss }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{left_join}\NormalTok{(}
+\NormalTok{    dplyr}\OperatorTok{::}\KeywordTok{select}\NormalTok{(dseeds_tournament, }\DataTypeTok{t2_rank =}\NormalTok{ ranking, }\DataTypeTok{t2_rank_n =}\NormalTok{ rank_num, teamid, season), }
+    \DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"team2id"}\NormalTok{=}\StringTok{"teamid"}\NormalTok{,}\StringTok{"season"}\NormalTok{=}\StringTok{"season"}\NormalTok{)) }
+
+
+
+\NormalTok{### Join ELO rating data}
+\CommentTok{#season_elos <- read.csv("../input/fivethirtyeight-elo-ratings/season_elos.csv") %>% rename(teamid = team_id)}
+\NormalTok{season_elos <-}\StringTok{ }\KeywordTok{read.csv}\NormalTok{(}\KeywordTok{paste}\NormalTok{(dir,}\StringTok{'season_elos.csv'}\NormalTok{,}\DataTypeTok{sep=}\StringTok{''}\NormalTok{)) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{rename}\NormalTok{(}\DataTypeTok{teamid =}\NormalTok{ team_id)}
+
+\CommentTok{# Join team 1 data}
+\NormalTok{d_ss <-}\StringTok{ }\NormalTok{d_ss }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{left_join}\NormalTok{(}
+    \KeywordTok{select}\NormalTok{(season_elos, }
+\NormalTok{           season, }
+\NormalTok{           teamid, }
+           \DataTypeTok{t1_season_elo =}\NormalTok{ season_elo),}
+    \DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"team1id"}\NormalTok{ =}\StringTok{ "teamid"}\NormalTok{,}\StringTok{"season"}\NormalTok{ =}\StringTok{ "season"}\NormalTok{))}
+
+
+\CommentTok{# Join team 2 data}
+\NormalTok{d_ss <-}\StringTok{ }\NormalTok{d_ss }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{left_join}\NormalTok{(}
+    \KeywordTok{select}\NormalTok{(season_elos, }
+\NormalTok{           season, }
+\NormalTok{           teamid, }
+           \DataTypeTok{t2_season_elo =}\NormalTok{ season_elo),}
+    \DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"team2id"}\NormalTok{ =}\StringTok{ "teamid"}\NormalTok{,}\StringTok{"season"}\NormalTok{ =}\StringTok{ "season"}\NormalTok{))}
+
+
+\CommentTok{# Key differences between winner and loser}
+\CommentTok{#Add elop probability}
+
+\NormalTok{d_ss <-}\StringTok{ }\NormalTok{d_ss }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{elo_diff =}\NormalTok{ t1_season_elo }\OperatorTok{-}\StringTok{ }\NormalTok{t2_season_elo,}
+         \DataTypeTok{elo_prob_1 =} \DecValTok{1}\OperatorTok{/}\NormalTok{(}\DecValTok{10}\OperatorTok{^}\NormalTok{(}\OperatorTok{-}\NormalTok{elo_diff}\OperatorTok{/}\DecValTok{400}\NormalTok{)}\OperatorTok{+}\DecValTok{1}\NormalTok{),}
+         \DataTypeTok{diff_rank =}\NormalTok{ t1_rank_n }\OperatorTok{-}\StringTok{ }\NormalTok{t2_rank_n}
+\NormalTok{  )}
+
+\CommentTok{#PIE feature}
+\NormalTok{d_ss <-}\StringTok{ }\NormalTok{d_ss[d_ss}\OperatorTok{$}\NormalTok{season}\OperatorTok{>=}\DecValTok{2003}\NormalTok{,]}
+\CommentTok{# Join team 1 data}
+\NormalTok{d_ss <-}\StringTok{ }\NormalTok{d_ss }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{left_join}\NormalTok{(}
+    \KeywordTok{select}\NormalTok{(stats_season, }
+\NormalTok{           Season, }
+\NormalTok{           TeamID, }
+           \DataTypeTok{t1_mpie =}\NormalTok{ MPIE),}
+    \DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"team1id"}\NormalTok{ =}\StringTok{ "TeamID"}\NormalTok{,}\StringTok{"season"}\NormalTok{ =}\StringTok{ "Season"}\NormalTok{))}
+
+\CommentTok{# Join team 2 data}
+\NormalTok{d_ss <-}\StringTok{ }\NormalTok{d_ss }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{left_join}\NormalTok{(}
+    \KeywordTok{select}\NormalTok{(stats_season, }
+\NormalTok{           Season, }
+\NormalTok{           TeamID, }
+           \DataTypeTok{t2_mpie =}\NormalTok{ MPIE),}
+    \DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"team2id"}\NormalTok{ =}\StringTok{ "TeamID"}\NormalTok{,}\StringTok{"season"}\NormalTok{ =}\StringTok{ "Season"}\NormalTok{))}
+
+\NormalTok{################################}
+\CommentTok{#Netrtg}
+
+\CommentTok{# Join team 1 data}
+\NormalTok{d_ss <-}\StringTok{ }\NormalTok{d_ss }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{left_join}\NormalTok{(}
+    \KeywordTok{select}\NormalTok{(stats_season, }
+\NormalTok{           Season, }
+\NormalTok{           TeamID, }
+           \DataTypeTok{t1_netrtg =}\NormalTok{ MNetRTG),}
+    \DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"team1id"}\NormalTok{ =}\StringTok{ "TeamID"}\NormalTok{,}\StringTok{"season"}\NormalTok{ =}\StringTok{ "Season"}\NormalTok{))}
+
+\CommentTok{# Join team 2 data}
+\NormalTok{d_ss <-}\StringTok{ }\NormalTok{d_ss }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{left_join}\NormalTok{(}
+    \KeywordTok{select}\NormalTok{(stats_season, }
+\NormalTok{           Season, }
+\NormalTok{           TeamID, }
+           \DataTypeTok{t2_netrtg =}\NormalTok{ MNetRTG),}
+    \DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"team2id"}\NormalTok{ =}\StringTok{ "TeamID"}\NormalTok{,}\StringTok{"season"}\NormalTok{ =}\StringTok{ "Season"}\NormalTok{))}
+
+
+
+\NormalTok{### Make predictions based on model }
+\NormalTok{train <-}\StringTok{ }\NormalTok{outcome_tournament }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(season }\OperatorTok{<=}\StringTok{ }\DecValTok{2013}\NormalTok{) }\CommentTok{#Takes occurred tournament games results (team1win)}
+
+
+
+\NormalTok{test_outcome_tournament <-}\StringTok{ }\NormalTok{outcome_tournament }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(season }\OperatorTok{>}\StringTok{ }\DecValTok{2013}\NormalTok{) }\CommentTok{#Test sample, target team1win}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{train}\OperatorTok{$}\NormalTok{daynum <-}\StringTok{ }\OtherTok{NULL}
+\NormalTok{train}\OperatorTok{$}\NormalTok{t1_rank <-}\StringTok{ }\OtherTok{NULL}
+\NormalTok{train}\OperatorTok{$}\NormalTok{t2_rank <-}\StringTok{ }\OtherTok{NULL}
+\KeywordTok{kable}\NormalTok{(train[}\KeywordTok{sample}\NormalTok{(}\KeywordTok{nrow}\NormalTok{(train), }\DecValTok{6}\NormalTok{), ][,}\DecValTok{1}\OperatorTok{:}\DecValTok{10}\NormalTok{])}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{longtable}[]{@{}lrrrrrrrrrr@{}}
+\toprule
+& season & team1id & team2id & team1win & t1\_rank\_n & t2\_rank\_n &
+diff\_rank & t1\_season\_elo & t2\_season\_elo &
+elo\_diff\tabularnewline
+\midrule
+\endhead
+264 & 2007 & 1266 & 1277 & 0 & 8 & 9 & -1 & 1827.897 & 1852.932 &
+-25.03541\tabularnewline
+518 & 2011 & 1140 & 1459 & 1 & 3 & 14 & -11 & 1948.359 & 1639.349 &
+309.00998\tabularnewline
+377 & 2008 & 1390 & 1400 & 0 & 3 & 2 & 1 & 1856.137 & 1968.462 &
+-112.32458\tabularnewline
+257 & 2007 & 1197 & 1310 & 0 & 1 & 1 & 0 & 1329.205 & 1533.327 &
+-204.12222\tabularnewline
+88 & 2004 & 1272 & 1376 & 1 & 7 & 10 & -3 & 1849.112 & 1788.532 &
+60.57953\tabularnewline
+18 & 2003 & 1386 & 1120 & 0 & 7 & 10 & -3 & 1840.296 & 1722.967 &
+117.32938\tabularnewline
+\bottomrule
+\end{longtable}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#Train model with train data}
+\CommentTok{#Add predictions to dss}
+\CommentTok{#Merge d_ss with test_outcome_tournament (games that occurred) -> validation}
+\CommentTok{#validation has target and Pred for every game that occurered 2014-2018}
+\CommentTok{#Apply LogLoss to validation$Pred and validation$team1win}
+\end{Highlighting}
+\end{Shaded}
+
+
+\end{document}

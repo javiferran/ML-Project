@@ -1,14 +1,45 @@
+---
+title: "MVA Final Project"
+author:
+- Javier Ferrando Monsonis
+- Marcel Porta Valles
+- Mehmet Fatih ??agil
+date: "February 20, 2018"
+output: 
+  pdf_document: 
+    keep_tex: yes
+---
+
+```{r}
+
 library(magrittr)
 library(ggplot2)
 library(dplyr)
 library(stringr)
 library(ggplot2)
 
+library(data.table)
+library(dplyr)
+library(magrittr)
+library(ggplot2)
+library(gridExtra)
+library(ggExtra)
+library(corrplot)
+library(factoextra)
+library(stringr)
+library(FactoMineR)
+#library(kableExtra)
+library(knitr)
 
-#setwd("/Users/JaviFerrando/Desktop/NCAA Data-2018")
+```
 
+```{r, include = FALSE}
 
-dir <- 'input/'
+setwd("/Users/JaviFerrando/Desktop/MLProject/")
+dir <- '/Users/JaviFerrando/Desktop/MLProject/input/'
+
+sample_submission <- read.csv(paste(dir,'SampleSubmissionStage1.csv',sep=''))#2014-2018 every possible matchup 
+
 
 # Get data
 dseeds_tournament <- fread(paste(dir,'NCAATourneySeeds.csv',sep=''))
@@ -32,7 +63,7 @@ outcome_tournament <- outcome_tournament %>%
 # make seeds 1-16 without letters (except for certain seed)
 dseeds_tournament <- dseeds_tournament %>% 
   mutate(ranking = as.factor((str_replace(Seed, "[A-Z]",""))), 
-         rank_num = as.numeric(str_replace(ranking, ".[a-z]","")))
+         rank_num = as.numeric(str_replace(ranking, "[a-z]","")))
 names(dseeds_tournament) <- tolower(names(dseeds_tournament))
 
 # team 1
@@ -225,8 +256,11 @@ outcome_tournament <- outcome_tournament %>%
 
 ### Load data
 
-sample_submission <- read.csv(paste(dir,'SampleSubmissionStage2.csv',sep=''))
+#sample_submission <- read.csv(paste(dir,'SampleSubmissionStage2.csv',sep=''))#2019 every possible matchup -> can only check by submitting to Kaggle
 
+
+#####################################################################################################
+#d_ss -> same as outcome_tournament but with sample_submission format (every possible matchup)
 
 ### Join team data and ranking data
 
@@ -329,48 +363,100 @@ d_ss <- d_ss %>%
     by = c("team2id" = "TeamID","season" = "Season"))
 
 
-train <- outcome_tournament
-
+d_ss$t1_rank <- NULL
+d_ss$t2_rank <- NULL
+outcome_tournament$t1_rank <- NULL
+outcome_tournament$t2_rank <- NULL
 ### Make predictions based on model 
-train <- train %>% filter(season <= 2013)
+train <- outcome_tournament %>% filter(season <= 2013) #Takes occurred tournament games results (team1win)
+
+
+
+test_outcome_tournament <- outcome_tournament %>% filter(season > 2013) #Test sample, target team1win
+```
+
+```{r}
+#train$daynum <- NULL
+#train$t1_rank <- NULL
+#train$t2_rank <- NULL
+kable(train[sample(nrow(train), 6), ][,1:10])
+
+```
+
+```{r}
+
+#Train model with train data
+#Add predictions to dss
+#Merge d_ss with test_outcome_tournament (games that occurred) -> validation
+#validation has target and Pred for every game that occurered 2014-2018
+#Apply LogLoss to validation$Pred and validation$team1win
 
 #logistic regression model: differences
 model <- glm(team1win ~ 
                diff_rank +
-               t1_rank_n +
+               #t1_rank_n +
                t1_season_elo +
                t2_season_elo +
                elo_prob_1 +
-               t1_mpie + 
+               t1_mpie +
                t2_mpie +
                t1_netrtg +
                t2_netrtg
              ,
              
              data = train, family = binomial)
+
+
 summary(model)
+```
 
+```{r}
+#Regularized Logistic Regression
+#Totally failes the predictions
 
-# predict on test set
+train_glmnet <- train[,-(1:4)]
+col_order <- colnames(train_glmnet)
+
+set.seed(123)
+library(glmnet)
+x <- model.matrix(team1win~., train_glmnet)
+y <- train_glmnet$team1win
+cv.lasso <- cv.glmnet(x, y , alpha = 1, family = "binomial")
+# Fit the final model on the training data
+model <- glmnet(x, y, alpha = 1, family = "binomial",
+                lambda = cv.lasso$lambda.min)
+plot(cv.lasso)
+# Display regression coefficients
+coef(model)
+```
+
+```{r}
+#Predict on every possible matchup
 predict <- data.frame(Pred = predict(model, newdata = d_ss, type = 'response'))
 d_ss <- d_ss %>% mutate(Pred = predict$Pred)# %>% dplyr::select(ID, Pred) Change sample submission pred=0.5 to model predicition
 
-# use original sample 
-d_ss_fin <- sample_submission %>% mutate(Pred = d_ss$Pred)
+d_ss_fin <- sample_submission %>% mutate(Pred = d_ss$Pred) #only matchup and prediction -> Results for kaggle
+#write.csv(d_ss_fin, "submission_stage_2.csv", row.names = FALSE)
 
-#sample_submission <- read.csv(paste(dir,'SampleSubmissionStage1.csv',sep=''))
 
-# output 
-write.csv(d_ss_fin, "submission_stage_2.csv", row.names = FALSE)
 
-test_outcome_tournament <- outcome_tournament %>% filter(season > 2013)
+#### glmnet test
+d_ss_glmnet <- d_ss[,-1][,-(2:4)]
+colnames(d_ss_glmnet)[1] <- "team1win"
+d_ss_glmnet <- d_ss_glmnet[, col_order]
 
-validation <- merge(x = test_outcome_tournament, y = d_ss, by=c("team1id","team2id","season"), all = FALSE)
-validation$Pred
+x.test <- model.matrix(team1win~., d_ss_glmnet)
+
+probabilities <- model %>% predict(newx = x.test)
+```
+
+```{r}
+#We can only test with 2014-2018 data
+#Merge every possible matchup result predictions with real games and check test error
+test_result <- merge(x = test_outcome_tournament, y = d_ss[2:5], by=c("team1id","team2id","season"), all = FALSE)
 
 library(MLmetrics)
-LogLoss(y_pred = validation$Pred, y_true = validation$team1win)
 
-final_df <- data.frame(x = validation$Pred, y =validation$team1win)
-colnames(final_df) <- c("Prediction","Result")
+LogLoss(y_pred = test_result$Pred, y_true = test_result$team1win)
 
+```

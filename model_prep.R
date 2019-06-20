@@ -1,14 +1,7 @@
-library(magrittr)
-library(ggplot2)
-library(dplyr)
-library(stringr)
-library(ggplot2)
 
 
-#setwd("/Users/JaviFerrando/Desktop/NCAA Data-2018")
-
-
-dir <- 'input/'
+setwd("/Users/JaviFerrando/Desktop/MLProject/")
+dir <- '/Users/JaviFerrando/Desktop/MLProject/input/'
 
 # Get data
 dseeds_tournament <- fread(paste(dir,'NCAATourneySeeds.csv',sep=''))
@@ -225,8 +218,14 @@ outcome_tournament <- outcome_tournament %>%
 
 ### Load data
 
-sample_submission <- read.csv(paste(dir,'SampleSubmissionStage2.csv',sep=''))
+#sample_submission <- read.csv(paste(dir,'SampleSubmissionStage2.csv',sep=''))#2019 every possible matchup -> can only check by submitting to Kaggle
+sample_submission <- read.csv(paste(dir,'SampleSubmissionStage1.csv',sep=''))#2014-2018 every possible matchup 
 
+
+
+
+#####################################################################################################
+#d_ss -> same as outcome_tournament but with sample_submission format (every possible matchup)
 
 ### Join team data and ranking data
 
@@ -329,48 +328,17 @@ d_ss <- d_ss %>%
     by = c("team2id" = "TeamID","season" = "Season"))
 
 
-train <- outcome_tournament
 
 ### Make predictions based on model 
-train <- train %>% filter(season <= 2013)
+train <- outcome_tournament %>% filter(season <= 2013) #Takes occurred tournament games results (team1win)
+head(train)
 
-#logistic regression model: differences
-model <- glm(team1win ~ 
-               diff_rank +
-               t1_rank_n +
-               t1_season_elo +
-               t2_season_elo +
-               elo_prob_1 +
-               t1_mpie + 
-               t2_mpie +
-               t1_netrtg +
-               t2_netrtg
-             ,
-             
-             data = train, family = binomial)
-summary(model)
+test_outcome_tournament <- outcome_tournament %>% filter(season > 2013) #Test sample, target team1win
 
 
-# predict on test set
-predict <- data.frame(Pred = predict(model, newdata = d_ss, type = 'response'))
-d_ss <- d_ss %>% mutate(Pred = predict$Pred)# %>% dplyr::select(ID, Pred) Change sample submission pred=0.5 to model predicition
-
-# use original sample 
-d_ss_fin <- sample_submission %>% mutate(Pred = d_ss$Pred)
-
-#sample_submission <- read.csv(paste(dir,'SampleSubmissionStage1.csv',sep=''))
-
-# output 
-write.csv(d_ss_fin, "submission_stage_2.csv", row.names = FALSE)
-
-test_outcome_tournament <- outcome_tournament %>% filter(season > 2013)
-
-validation <- merge(x = test_outcome_tournament, y = d_ss, by=c("team1id","team2id","season"), all = FALSE)
-validation$Pred
-
-library(MLmetrics)
-LogLoss(y_pred = validation$Pred, y_true = validation$team1win)
-
-final_df <- data.frame(x = validation$Pred, y =validation$team1win)
-colnames(final_df) <- c("Prediction","Result")
+#Train model with train data
+#Add predictions to dss
+#Merge d_ss with test_outcome_tournament (games that occurred) -> validation
+#validation has target and Pred for every game that occurered 2014-2018
+#Apply LogLoss to validation$Pred and validation$team1win
 
