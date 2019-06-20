@@ -1,5 +1,14 @@
 dir <- '/Users/Marcelpv96/Dropbox/MASTER/1rANY/Q2/ML/Project/ML-Project/input/'
 
+library(data.table)
+library(dplyr)
+library(magrittr)
+library(ggplot2)
+library(gridExtra)
+library(ggExtra)
+library(corrplot)
+
+
 # LOAD USED CSV FILES #
 teams <- fread(paste(dir,'Teams.csv',sep=''))
 seasons <- fread(paste(dir,'Seasons.csv',sep=''))
@@ -110,10 +119,8 @@ los_stats <- seas_detail[, .(
 
 stats_all <- rbindlist(list(win_stats, los_stats))
 
-# Statics related with scoring : %Field goals, %3-pt field goals, Free throw goals M/A ratio.
-
-
-
+# Statics related with scoring : %Field goals, %2-pt, %3-pt field goals, Free throw goals. All with M/A ratio. 
+# Which is, made / attempted ratio.
 
 
 g1 <- stats_all %>%
@@ -121,8 +128,6 @@ g1 <- stats_all %>%
   geom_density(alpha = 0.7) +
   scale_fill_manual(values = c('darkblue', 'grey')) + 
   labs(x = 'Field goals %', y = '', title = 'Field Goal Shotting')
-
-grid.arrange(g1, ncol=1)
 
 g2 <- stats_all %>%
   ggplot(aes(x = FGP2, fill = Outcome)) +
@@ -141,6 +146,12 @@ g4 <- stats_all %>%
   geom_density(alpha = 0.7) +
   scale_fill_manual(values = c('darkblue', 'grey')) + 
   labs(x = 'Free throw %', y = '', title = 'Free Throw Shooting')
+
+
+# Other statics that not are directly related with score
+
+grid.arrange(g1, g2, g3, g4, ncol=2)
+
 
 g5 <- stats_all %>%
   ggplot(aes(x = ORP, fill = Outcome)) +
@@ -178,4 +189,41 @@ g10 <- stats_all %>%
   scale_fill_manual(values = c('darkblue', 'grey')) + 
   labs(x = 'Blocks', y = '', title = 'Blocks per Game')
 
-grid.arrange(g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, ncol = 2)
+grid.arrange(g5, g6, g7, g8, g9, g10, ncol = 2)
+
+
+
+# When advanced statistics are applied:
+seas_enriched <- fread("NCAASeasonDetailedResultsEnriched.csv")
+
+win_advanced_stats <- seas_enriched[, .(
+  Season,
+  TeamID = WTeamID,
+  Outcome = rep('W', .N),
+  FGM = WFGM,
+  Pos = WPos,
+  OffRtg = WOffRtg,
+  DefRtg = WDefRtg,
+  NetRtg = WNetRtg,
+  PIE = WPIE
+)]
+
+los_advanced_stats <- seas_enriched[, .(
+  Season,
+  TeamID = WTeamID,
+  Outcome = rep('W', .N),
+  FGM = LFGM,
+  Pos = LPos,
+  OffRtg = LOffRtg,
+  DefRtg = LDefRtg,
+  NetRtg = LNetRtg,
+  PIE = LPIE
+)]
+
+
+gPie <- win_advanced_stats %>%
+  ggplot(aes(x = BLK, fill = Outcome)) +
+  geom_density(alpha = 0.7) +
+  scale_fill_manual(values = c('darkblue', 'grey')) + 
+  labs(x = 'Blocks', y = '', title = 'Blocks per Game')
+
