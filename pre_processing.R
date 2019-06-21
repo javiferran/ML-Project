@@ -12,12 +12,6 @@ get.outcome_tournament <- function(dg_tournment, dseeds_tournament){
     select(-rand, -wteamid,-lteamid)
   
   # Add seeding information to games: 
-
-  # make seeds 1-16 without letters (except for certain seed)
-  dseeds_tournament <- dseeds_tournament %>%
-     mutate(ranking = as.factor((str_replace(Seed, "[A-Z]",""))),
-            rank_num = as.numeric(str_replace(ranking, ".[a-z]","")))
-   names(dseeds_tournament) <- tolower(names(dseeds_tournament))
   
   # team 1
    outcome_tournament <- outcome_tournament %>%
@@ -36,8 +30,7 @@ get.outcome_tournament <- function(dg_tournment, dseeds_tournament){
   outcome_tournament <- outcome_tournament %>% mutate(t1_rank = ifelse(is.na(t1_rank), 8.5, t1_rank),
                                                       t2_rank = ifelse(is.na(t2_rank), 8.5, t2_rank),
                                                       t1_rank_n = ifelse(is.na(t1_rank_n), 8.5, t1_rank_n),
-                                                      t2_rank_n = ifelse(is.na(t2_rank_n), 8.5, t2_rank_n),
-                                                      diff_rank = t1_rank_n - t2_rank_n)
+                                                      t2_rank_n = ifelse(is.na(t2_rank_n), 8.5, t2_rank_n))
   # Only data from season 2003>=
   
   return(outcome_tournament[outcome_tournament$season>=2003,])
@@ -74,8 +67,9 @@ add.season_elos <- function(outcome_tournament, season_elos){
   
   outcome_tournament <- outcome_tournament %>% 
     mutate(elo_diff = t1_season_elo - t2_season_elo,
-           elo_prob_1 = 1/(10^(-elo_diff/400)+1)
-    )
+           elo_prob_1 = 1/(10^(-elo_diff/400)+1),
+           diff_rank = t1_rank_n - t2_rank_n)
+    
   
   return(outcome_tournament)
 }
@@ -206,13 +200,8 @@ get.sample_submission <- function(sample_submission, dseeds_tournament){
                           team1id =  as.numeric(gsub("(.*)_(.*)_(.*)",ID, replacement = "\\2")),
                           team2id =  as.numeric(gsub("(.*)_(.*)_(.*)",ID, replacement = "\\3")))
   
+
   # Add rank data
-  # make seeds 1-16 without letters (except for certain seed)
-  dseeds_tournament <- dseeds_tournament %>%
-    mutate(ranking = as.factor((str_replace(Seed, "[A-Z]",""))),
-           rank_num = as.numeric(str_replace(ranking, ".[a-z]","")))
-  names(dseeds_tournament) <- tolower(names(dseeds_tournament))
-  
   # team 1
   d_ss <- d_ss %>% 
     left_join(
@@ -223,8 +212,9 @@ get.sample_submission <- function(sample_submission, dseeds_tournament){
   d_ss <- d_ss %>% 
     left_join(
       dplyr::select(dseeds_tournament, t2_rank = ranking, t2_rank_n = rank_num, teamid, season), 
-      by = c("team2id"="teamid","season"="season")) 
-  return(d_ss)
+      by = c("team2id"="teamid","season"="season"))  
+
+  return(d_ss[d_ss$season>=2003,])
 }
 
 
