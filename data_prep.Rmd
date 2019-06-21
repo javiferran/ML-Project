@@ -7,7 +7,7 @@ author:
 date: "February 20, 2018"
 output: 
   pdf_document: 
-    keep_tex: yes
+    keep_tex: yes8
 ---
 
 ```{r}
@@ -35,8 +35,8 @@ library(knitr)
 
 ```{r, include = FALSE}
 
-setwd("/Users/JaviFerrando/Desktop/MLProject/")
-dir <- '/Users/JaviFerrando/Desktop/MLProject/input/'
+setwd("/Users/JaviFerrando/Desktop/ML-Project/")
+dir <- '/Users/JaviFerrando/Desktop/ML-Project/input/'
 
 sample_submission <- read.csv(paste(dir,'SampleSubmissionStage1.csv',sep=''))#2014-2018 every possible matchup 
 
@@ -390,6 +390,8 @@ kable(train[sample(nrow(train), 6), ][,1:10])
 #Merge d_ss with test_outcome_tournament (games that occurred) -> validation
 #validation has target and Pred for every game that occurered 2014-2018
 #Apply LogLoss to validation$Pred and validation$team1win
+train_glm <- train[,-(1:4)]
+d_ss_glm <- d_ss[,-1][,-(2:4)]
 
 #logistic regression model: differences
 model <- glm(team1win ~ 
@@ -404,7 +406,20 @@ model <- glm(team1win ~
                t2_netrtg
              ,
              
-             data = train, family = binomial)
+             data = train_glm, family = binomial)
+
+model <- glm(team1win ~ .
+             ,
+             
+             data = train_glm, family = binomial)
+
+
+#Predict on every possible matchup
+predict <- data.frame(Pred = predict(model, newdata = d_ss_glm, type = 'response'))
+d_ss <- d_ss %>% mutate(Pred = predict$Pred)# %>% dplyr::select(ID, Pred) Change sample submission pred=0.5 to model predicition
+
+d_ss_fin <- sample_submission %>% mutate(Pred = d_ss$Pred) #only matchup and prediction -> Results for kaggle
+#write.csv(d_ss_fin, "submission_stage_2.csv", row.names = FALSE)
 
 
 summary(model)
@@ -412,7 +427,7 @@ summary(model)
 
 ```{r}
 #Regularized Logistic Regression
-#Totally failes the predictions
+#Total fail-> predictions wrong
 
 train_glmnet <- train[,-(1:4)]
 col_order <- colnames(train_glmnet)
@@ -428,17 +443,6 @@ model <- glmnet(x, y, alpha = 1, family = "binomial",
 plot(cv.lasso)
 # Display regression coefficients
 coef(model)
-```
-
-```{r}
-#Predict on every possible matchup
-predict <- data.frame(Pred = predict(model, newdata = d_ss, type = 'response'))
-d_ss <- d_ss %>% mutate(Pred = predict$Pred)# %>% dplyr::select(ID, Pred) Change sample submission pred=0.5 to model predicition
-
-d_ss_fin <- sample_submission %>% mutate(Pred = d_ss$Pred) #only matchup and prediction -> Results for kaggle
-#write.csv(d_ss_fin, "submission_stage_2.csv", row.names = FALSE)
-
-
 
 #### glmnet test
 d_ss_glmnet <- d_ss[,-1][,-(2:4)]
@@ -451,6 +455,86 @@ probabilities <- model %>% predict(newx = x.test)
 ```
 
 ```{r}
+#Neural Network
+#Scale inputs
+library(nnet)
+library(caret)
+library(neuralnet)
+
+train_nnet <- train[,-(1:4)]
+col_order <- colnames(train_nnet)
+train_nnet_scaled <- as.data.frame(scale(train_nnet[-1]))
+train_nnet_scaled <- cbind(train_nnet$team1win,train_nnet_scaled)
+colnames(train_nnet_scaled)[1] <- "team1win"
+train_nnet_scaled$team1win<- factor(train_nnet_scaled$team1win, labels=c(0,1))#not for neuralnet
+
+#nn1 <- nnet(team1win~t1_rank_n+t2_rank_n+elo_diff,data=train_nnet_scaled,entropy=T,size=100,decay=0,maxit=1000,trace=T)
+#predict <- data.frame(Pred = predict(nn1, newdata = d_ss_nnet_scaled))
+
+#10 fold cv trial
+
+## We first split the available data into learning and test sets, selecting randomly 2/3 and 1/3 of the data
+## We do this for a honest estimation of prediction performance
+
+names <- colnames(train_nnet_scaled)[-1] #choose the names you want
+a <- as.formula(paste('team1win ~ ' ,paste(names,collapse='+')))
+a
+
+#neuralnet DOESN'T need factors as target
+nn <- neuralnet(a, data=train_nnet_scaled, hidden=c(1,1), linear.output=FALSE, threshold=0.01)
+nn$result.matrix
+plot(nn)
+
+
+
+#nnet by means of train function, needs factors as target
+# model <- train(team1win~., data=train_nnet_scaled, method='nnet', maxit = 300,
+#                trControl=trainControl(method='cv'))
+
+
+
+d_ss_nnet <- d_ss[,-1][,-(2:4)]
+colnames(d_ss_nnet)[1] <- "team1win"
+d_ss_nnet <- d_ss_nnet[, col_order]
+d_ss_nnet_scaled <- scale(d_ss_nnet)
+
+#predict <- data.frame(Pred = predict (model, newdata=d_ss_nnet_scaled, type="prob"))
+
+test_set <- subset(d_ss_nnet_scaled, select = colnames(d_ss_nnet_scaled)[-1])
+nn.results <- compute(nn, test_set)
+
+#train in nnet prediction
+d_ss <- d_ss %>% mutate(Pred = predict$Pred.1)# %>% dplyr::select(ID, Pred) Change sample submission pred=0.5 to model predicition
+
+#neuralnet prediction
+#d_ss$Pred <- NULL
+d_ss <- d_ss %>% mutate(Pred = as.numeric(nn.results$net.result))
+
+
+
+
+
+d_ss_fin <- sample_submission %>% mutate(Pred = d_ss$Pred) #only matchup and prediction -> Results for kaggle
+#write.csv(d_ss_fin, "submission_stage_2.csv", row.names = FALSE)
+
+
+#############
+set.seed(43)
+N <- nrow(train_nnet_scaled)
+learn <- sample(1:N, round(2*N/3))
+(sizes <- 2*seq(1,10,by=2)) #different sizes
+
+## specify 10x10 CV
+trc <- trainControl (method="repeatedcv", number=10, repeats=10)
+
+model.10x10CV <- train (team1win ~., data = train_nnet_scaled, subset=learn, method='nnet', maxit = 500, trace = FALSE,
+                        tuneGrid = expand.grid(.size=sizes,.decay=0), trControl=trc)
+
+(decays <- 10^seq(-3,0,by=0.1))
+
+```
+
+```{r}
 #We can only test with 2014-2018 data
 #Merge every possible matchup result predictions with real games and check test error
 test_result <- merge(x = test_outcome_tournament, y = d_ss[2:5], by=c("team1id","team2id","season"), all = FALSE)
@@ -459,4 +543,43 @@ library(MLmetrics)
 
 LogLoss(y_pred = test_result$Pred, y_true = test_result$team1win)
 
+```
+
+```{r,echo=FALSE}
+library(rpart)
+train_tree <- train_nnet
+train_tree$team1win<- factor(train_tree$team1win, labels=c(0,1))#not for neuralnet
+
+DecisionTree = rpart(team1win ~ ., data=train_tree,control=rpart.control(cp=0.001, xval=10))
+printcp(DecisionTree)
+
+treeSize = DecisionTree$cptable[,2]+1 #nsplit
+treeImpurity = DecisionTree$cptable[,3] #rel error
+cvImpurity = DecisionTree$cptable[,4] #xerror
+
+plot(treeSize, treeImpurity, main="R(T)", xlab="size of the tree", ylab="Relativity Impurity", type="o", col='red') 
+lines(treeSize, cvImpurity ,type="o", col='blue')
+legend("topright", c("All training data","CV training data"), col=c('red', 'blue'), lty=1)
+```
+
+```{r, echo=FALSE}
+DecisionTree$cptable = as.data.frame(DecisionTree $cptable)
+ind = which.min(DecisionTree$cptable$xerror)
+xerr <-DecisionTree$cptable$xerror[ind]
+xstd <-DecisionTree$cptable$xstd[ind]
+
+i = 1
+while (DecisionTree$cptable$xerror[i] > xerr+xstd){
+  i = i+1
+}
+alfa = DecisionTree$cptable$CP[i]
+
+optimal <- prune(DecisionTree, cp=alfa)
+par(mfrow = c(1,1), xpd = NA)
+plot(optimal)
+text(optimal, use.n=T,cex=0.8,col="blue")
+
+#Tree prediction
+predict(DecisionTree,d_ss_nnet)[,1]
+d_ss <- d_ss %>% mutate(Pred = predict(DecisionTree,d_ss_nnet)[,1])
 ```
