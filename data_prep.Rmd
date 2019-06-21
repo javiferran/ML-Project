@@ -583,3 +583,36 @@ text(optimal, use.n=T,cex=0.8,col="blue")
 predict(DecisionTree,d_ss_nnet)[,1]
 d_ss <- d_ss %>% mutate(Pred = predict(DecisionTree,d_ss_nnet)[,1])
 ```
+
+```{r, echo=FALSE}
+library(randomForest)
+train_tree <- train_nnet
+train_tree$team1win<- factor(train_tree$team1win, labels=c(0,1))
+
+#Convert d_ss_tree$team1win to categorical values
+d_ss_tree <- d_ss_nnet
+d_ss_tree$team1win <- NULL
+d_ss_tree$team1win <- sample(c(0, 1), nrow(d_ss_nnet), replace=TRUE)
+d_ss_tree <- d_ss_tree[, col_order]
+d_ss_tree$team1win<- factor(d_ss_tree$team1win, labels=c(0,1))
+
+random_forest <- randomForest(formula = team1win ~.,
+                        data=train_tree,
+                        mtry=3,      # three predictor-vars selected randomly at each split
+                        xtest=d_ss_tree[-1],
+                        ytest=d_ss_tree$team1win,
+                        #ytest=as.factor(audit_imp$Adjusted[testRows]),
+                        importance=T,
+                        ntree=500,   # acceptably large value to ensure each sample row is predicted
+                                     # at least 2-digit nbr of times on average
+                        nodesize = 50,
+                        maxnodes = 40,
+                        norm.votes=T,
+                        keep.forest=TRUE)
+
+f_rf_predictions <- predict(random_forest, d_ss_tree, type='prob')
+d_ss <- d_ss %>% mutate(Pred = f_rf_predictions[,2])
+# 
+# cf <- confusionMatrix(factor(df_rf_predictions), factor(rf_test$target), positive="1", dnn = c("Prediction", "True values"))
+# draw_confusion_matrix(cf)
+```
