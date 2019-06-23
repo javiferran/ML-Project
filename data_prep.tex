@@ -221,373 +221,49 @@
 \KeywordTok{library}\NormalTok{(FactoMineR)}
 \CommentTok{#library(kableExtra)}
 \KeywordTok{library}\NormalTok{(knitr)}
-
-\KeywordTok{setwd}\NormalTok{(}\StringTok{"/Users/JaviFerrando/Desktop/MLProject/"}\NormalTok{)}
-\NormalTok{dir <-}\StringTok{ '/Users/JaviFerrando/Desktop/MLProject/input/'}
-
-\CommentTok{# Get data}
-\NormalTok{dseeds_tournament <-}\StringTok{ }\KeywordTok{fread}\NormalTok{(}\KeywordTok{paste}\NormalTok{(dir,}\StringTok{'NCAATourneySeeds.csv'}\NormalTok{,}\DataTypeTok{sep=}\StringTok{''}\NormalTok{))}
-\NormalTok{dg_tournment <-}\StringTok{ }\KeywordTok{fread}\NormalTok{(}\KeywordTok{paste}\NormalTok{(dir,}\StringTok{'NCAATourneyCompactResults.csv'}\NormalTok{,}\DataTypeTok{sep=}\StringTok{''}\NormalTok{))}
-
-
-\CommentTok{# keep only season, daynum, win and loss team ids for the dg_tournament data}
-\NormalTok{outcome_tournament <-}\StringTok{ }\NormalTok{dg_tournment }\OperatorTok{%>%}\StringTok{ }\KeywordTok{select}\NormalTok{(Season, DayNum, WTeamID, LTeamID)}
-\KeywordTok{names}\NormalTok{(outcome_tournament) <-}\StringTok{ }\KeywordTok{tolower}\NormalTok{(}\KeywordTok{names}\NormalTok{(outcome_tournament))}
-
-\CommentTok{# randomize winning and losing team into team 1 and team 2 (necessary for probabilities later) and drop other ids}
-\NormalTok{outcome_tournament <-}\StringTok{ }\NormalTok{outcome_tournament }\OperatorTok{%>%}\StringTok{ }
-\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{rand =} \KeywordTok{runif}\NormalTok{(}\KeywordTok{dim}\NormalTok{(outcome_tournament)[}\DecValTok{1}\NormalTok{]), }
-         \DataTypeTok{team1id =} \KeywordTok{ifelse}\NormalTok{(rand }\OperatorTok{>=}\StringTok{ }\FloatTok{0.5}\NormalTok{, wteamid, lteamid),}
-         \DataTypeTok{team2id =} \KeywordTok{ifelse}\NormalTok{(rand }\OperatorTok{<}\FloatTok{0.5}\NormalTok{, wteamid, lteamid),}
-         \DataTypeTok{team1win =} \KeywordTok{ifelse}\NormalTok{(team1id }\OperatorTok{==}\StringTok{ }\NormalTok{wteamid, }\DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{)) }\OperatorTok{%>%}\StringTok{ }
-\StringTok{  }\KeywordTok{select}\NormalTok{(}\OperatorTok{-}\NormalTok{rand, }\OperatorTok{-}\NormalTok{wteamid,}\OperatorTok{-}\NormalTok{lteamid)}
-
-\CommentTok{# Add seeding information to games: }
-
-\CommentTok{# make seeds 1-16 without letters (except for certain seed)}
-\NormalTok{dseeds_tournament <-}\StringTok{ }\NormalTok{dseeds_tournament }\OperatorTok{%>%}\StringTok{ }
-\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{ranking =} \KeywordTok{as.factor}\NormalTok{((}\KeywordTok{str_replace}\NormalTok{(Seed, }\StringTok{"[A-Z]"}\NormalTok{,}\StringTok{""}\NormalTok{))), }
-         \DataTypeTok{rank_num =} \KeywordTok{as.numeric}\NormalTok{(}\KeywordTok{str_replace}\NormalTok{(ranking, }\StringTok{".[a-z]"}\NormalTok{,}\StringTok{""}\NormalTok{)))}
-\KeywordTok{names}\NormalTok{(dseeds_tournament) <-}\StringTok{ }\KeywordTok{tolower}\NormalTok{(}\KeywordTok{names}\NormalTok{(dseeds_tournament))}
-
-\CommentTok{# team 1}
-\NormalTok{outcome_tournament <-}\StringTok{ }\NormalTok{outcome_tournament }\OperatorTok{%>%}\StringTok{ }
-\StringTok{  }\KeywordTok{left_join}\NormalTok{(}
-    \KeywordTok{select}\NormalTok{(dseeds_tournament, }\DataTypeTok{t1_rank =}\NormalTok{ ranking, }\DataTypeTok{t1_rank_n =}\NormalTok{ rank_num, teamid, season), }
-    \DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"team1id"}\NormalTok{=}\StringTok{"teamid"}\NormalTok{,}\StringTok{"season"}\NormalTok{=}\StringTok{"season"}\NormalTok{)) }
-
-\CommentTok{# team 2}
-\NormalTok{outcome_tournament <-}\StringTok{ }\NormalTok{outcome_tournament }\OperatorTok{%>%}\StringTok{ }
-\StringTok{  }\KeywordTok{left_join}\NormalTok{(}
-    \KeywordTok{select}\NormalTok{(dseeds_tournament, }\DataTypeTok{t2_rank =}\NormalTok{ ranking, }\DataTypeTok{t2_rank_n =}\NormalTok{ rank_num, teamid, season), }
-    \DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"team2id"}\NormalTok{=}\StringTok{"teamid"}\NormalTok{,}\StringTok{"season"}\NormalTok{=}\StringTok{"season"}\NormalTok{)) }
-
-
-\CommentTok{# replace NA seeds}
-\NormalTok{outcome_tournament <-}\StringTok{ }\NormalTok{outcome_tournament }\OperatorTok{%>%}\StringTok{ }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{t1_rank =} \KeywordTok{ifelse}\NormalTok{(}\KeywordTok{is.na}\NormalTok{(t1_rank), }\FloatTok{8.5}\NormalTok{, t1_rank),}
-                                                    \DataTypeTok{t2_rank =} \KeywordTok{ifelse}\NormalTok{(}\KeywordTok{is.na}\NormalTok{(t2_rank), }\FloatTok{8.5}\NormalTok{, t2_rank),}
-                                                    \DataTypeTok{t1_rank_n =} \KeywordTok{ifelse}\NormalTok{(}\KeywordTok{is.na}\NormalTok{(t1_rank_n), }\FloatTok{8.5}\NormalTok{, t1_rank_n),}
-                                                    \DataTypeTok{t2_rank_n =} \KeywordTok{ifelse}\NormalTok{(}\KeywordTok{is.na}\NormalTok{(t2_rank_n), }\FloatTok{8.5}\NormalTok{, t2_rank_n),}
-                                                    \DataTypeTok{diff_rank =}\NormalTok{ t1_rank_n }\OperatorTok{-}\StringTok{ }\NormalTok{t2_rank_n)}
-
-
-
-\NormalTok{season_elos <-}\StringTok{ }\KeywordTok{read.csv}\NormalTok{(}\KeywordTok{paste}\NormalTok{(dir,}\StringTok{'season_elos.csv'}\NormalTok{,}\DataTypeTok{sep=}\StringTok{''}\NormalTok{)) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{rename}\NormalTok{(}\DataTypeTok{teamid =}\NormalTok{ team_id)}
-
-
-\CommentTok{#Add season_elos (for t1 and t2) to outcome tournament}
-\CommentTok{# Join team 1 data}
-\NormalTok{outcome_tournament <-}\StringTok{ }\NormalTok{outcome_tournament }\OperatorTok{%>%}\StringTok{ }
-\StringTok{  }\KeywordTok{left_join}\NormalTok{(}
-    \KeywordTok{select}\NormalTok{(season_elos, }
-\NormalTok{           season, }
-\NormalTok{           teamid, }
-           \DataTypeTok{t1_season_elo =}\NormalTok{ season_elo),}
-    \DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"team1id"}\NormalTok{ =}\StringTok{ "teamid"}\NormalTok{,}\StringTok{"season"}\NormalTok{ =}\StringTok{ "season"}\NormalTok{))}
-
-
-\CommentTok{# Join team 2 data}
-\NormalTok{outcome_tournament <-}\StringTok{ }\NormalTok{outcome_tournament }\OperatorTok{%>%}\StringTok{ }
-\StringTok{  }\KeywordTok{left_join}\NormalTok{(}
-    \KeywordTok{select}\NormalTok{(season_elos, }
-\NormalTok{           season, }
-\NormalTok{           teamid, }
-           \DataTypeTok{t2_season_elo =}\NormalTok{ season_elo),}
-    \DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"team2id"}\NormalTok{ =}\StringTok{ "teamid"}\NormalTok{,}\StringTok{"season"}\NormalTok{ =}\StringTok{ "season"}\NormalTok{))}
-
-
-\CommentTok{# Compute ELO probabilities for the game, and the difference in ELO scores}
-
-\NormalTok{outcome_tournament <-}\StringTok{ }\NormalTok{outcome_tournament }\OperatorTok{%>%}\StringTok{ }
-\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{elo_diff =}\NormalTok{ t1_season_elo }\OperatorTok{-}\StringTok{ }\NormalTok{t2_season_elo,}
-         \DataTypeTok{elo_prob_1 =} \DecValTok{1}\OperatorTok{/}\NormalTok{(}\DecValTok{10}\OperatorTok{^}\NormalTok{(}\OperatorTok{-}\NormalTok{elo_diff}\OperatorTok{/}\DecValTok{400}\NormalTok{)}\OperatorTok{+}\DecValTok{1}\NormalTok{)}
-\NormalTok{  )}
-
-\NormalTok{################################}
-\NormalTok{outcome_tournament <-}\StringTok{ }\NormalTok{outcome_tournament[outcome_tournament}\OperatorTok{$}\NormalTok{season}\OperatorTok{>=}\DecValTok{2003}\NormalTok{,]}
-
-
-\NormalTok{################################################################################################################################}
-
-\CommentTok{#Add advanced statistics}
-
-\NormalTok{seas_enrich <-}\StringTok{ }\KeywordTok{fread}\NormalTok{(}\KeywordTok{paste}\NormalTok{(dir,}\StringTok{'NCAASeasonDetailedResultsEnriched.csv'}\NormalTok{,}\DataTypeTok{sep=}\StringTok{''}\NormalTok{))}
-
-\NormalTok{win_stats <-}\StringTok{ }\NormalTok{seas_enrich[, .(}
-\NormalTok{  Season,}
-  \DataTypeTok{TeamID =}\NormalTok{ WTeamID,}
-  \DataTypeTok{Result =} \KeywordTok{rep}\NormalTok{(}\StringTok{'W'}\NormalTok{, .N),}
-  \DataTypeTok{FGM =}\NormalTok{ WFGM,}
-  \DataTypeTok{FGA =}\NormalTok{ WFGA,}
-  \DataTypeTok{FGP =}\NormalTok{ WFGM }\OperatorTok{/}\StringTok{ }\NormalTok{WFGA,}
-  \DataTypeTok{FGP2 =}\NormalTok{ (WFGM }\OperatorTok{-}\StringTok{ }\NormalTok{WFGM3) }\OperatorTok{/}\StringTok{ }\NormalTok{(WFGA }\OperatorTok{-}\StringTok{ }\NormalTok{WFGA3),}
-  \DataTypeTok{FGM3 =}\NormalTok{ WFGM3,}
-  \DataTypeTok{FGA3 =}\NormalTok{ WFGA3,}
-  \DataTypeTok{FGP3 =}\NormalTok{ WFGM3 }\OperatorTok{/}\StringTok{ }\NormalTok{WFGA3,}
-  \DataTypeTok{FTM =}\NormalTok{ WFTM,}
-  \DataTypeTok{FTA =}\NormalTok{ WFTA,}
-  \DataTypeTok{FTP =}\NormalTok{ WFTM }\OperatorTok{/}\StringTok{ }\NormalTok{WFTA,}
-  \DataTypeTok{OR =}\NormalTok{ WOR,}
-  \DataTypeTok{DR =}\NormalTok{ WDR,}
-  \DataTypeTok{AST =}\NormalTok{ WAst,}
-  \DataTypeTok{TO =}\NormalTok{ WTO,}
-  \DataTypeTok{STL =}\NormalTok{ WStl,}
-  \DataTypeTok{BLK =}\NormalTok{ WBlk,}
-  \DataTypeTok{PF =}\NormalTok{ WPF,}
-  \DataTypeTok{PIE =}\NormalTok{ WPIE,}
-  \DataTypeTok{ORP =}\NormalTok{ WOR }\OperatorTok{/}\StringTok{ }\NormalTok{(WOR }\OperatorTok{+}\StringTok{ }\NormalTok{LDR),}
-  \DataTypeTok{DRP =}\NormalTok{ WDR }\OperatorTok{/}\StringTok{ }\NormalTok{(WDR }\OperatorTok{+}\StringTok{ }\NormalTok{LOR),}
-  \DataTypeTok{eFG =}\NormalTok{ WeFGP,}
-  \DataTypeTok{NetRTG =}\NormalTok{ WNetRtg,}
-  \DataTypeTok{POS =} \FloatTok{0.96} \OperatorTok{*}\StringTok{ }\NormalTok{(WFGA }\OperatorTok{+}\StringTok{ }\NormalTok{WTO }\OperatorTok{+}\StringTok{ }\FloatTok{0.44} \OperatorTok{*}\StringTok{ }\NormalTok{WFTA }\OperatorTok{-}\StringTok{ }\NormalTok{WOR)}
-\NormalTok{)]}
-
-\NormalTok{los_stats <-}\StringTok{ }\NormalTok{seas_enrich[, .(}
-\NormalTok{  Season,}
-  \DataTypeTok{TeamID =}\NormalTok{ LTeamID,}
-  \DataTypeTok{Result =} \KeywordTok{rep}\NormalTok{(}\StringTok{'L'}\NormalTok{, .N),}
-  \DataTypeTok{FGM =}\NormalTok{ LFGM,}
-  \DataTypeTok{FGA =}\NormalTok{ LFGA,}
-  \DataTypeTok{FGP =}\NormalTok{ LFGM }\OperatorTok{/}\StringTok{ }\NormalTok{LFGA,}
-  \DataTypeTok{FGP2 =}\NormalTok{ (LFGM }\OperatorTok{-}\StringTok{ }\NormalTok{LFGM3) }\OperatorTok{/}\StringTok{ }\NormalTok{(LFGA }\OperatorTok{-}\StringTok{ }\NormalTok{LFGA3),}
-  \DataTypeTok{FGM3 =}\NormalTok{ LFGM3,}
-  \DataTypeTok{FGA3 =}\NormalTok{ LFGA3,}
-  \DataTypeTok{FGP3 =}\NormalTok{ LFGM3 }\OperatorTok{/}\StringTok{ }\NormalTok{LFGA3,}
-  \DataTypeTok{FTM =}\NormalTok{ LFTM,}
-  \DataTypeTok{FTA =}\NormalTok{ LFTA,}
-  \DataTypeTok{FTP =}\NormalTok{ LFTM }\OperatorTok{/}\StringTok{ }\NormalTok{LFTA,}
-  \DataTypeTok{OR =}\NormalTok{ LOR,}
-  \DataTypeTok{DR =}\NormalTok{ LDR,}
-  \DataTypeTok{AST =}\NormalTok{ LAst,}
-  \DataTypeTok{TO =}\NormalTok{ LTO,}
-  \DataTypeTok{STL =}\NormalTok{ LStl,}
-  \DataTypeTok{BLK =}\NormalTok{ LBlk,}
-  \DataTypeTok{PF =}\NormalTok{ LPF,}
-  \DataTypeTok{PIE =}\NormalTok{ LPIE,}
-  \DataTypeTok{ORP =}\NormalTok{ (LOR }\OperatorTok{/}\StringTok{ }\NormalTok{(LOR }\OperatorTok{+}\StringTok{ }\NormalTok{WDR)),}
-  \DataTypeTok{DRP =}\NormalTok{ LDR }\OperatorTok{/}\StringTok{ }\NormalTok{(LDR }\OperatorTok{+}\StringTok{ }\NormalTok{WOR),}
-  \DataTypeTok{eFG =}\NormalTok{ LeFGP,}
-  \DataTypeTok{NetRTG =}\NormalTok{ LNetRtg,}
-  \DataTypeTok{POS =} \FloatTok{0.96} \OperatorTok{*}\StringTok{ }\NormalTok{(LFGA }\OperatorTok{+}\StringTok{ }\NormalTok{LTO }\OperatorTok{+}\StringTok{ }\FloatTok{0.44} \OperatorTok{*}\StringTok{ }\NormalTok{LFTA }\OperatorTok{-}\StringTok{ }\NormalTok{LOR)}
-\NormalTok{)]}
-
-\NormalTok{stats_all <-}\StringTok{ }\KeywordTok{rbindlist}\NormalTok{(}\KeywordTok{list}\NormalTok{(win_stats, los_stats))}
-
-
-\NormalTok{stats_season <-}\StringTok{ }\NormalTok{stats_all[, .(}
-  \DataTypeTok{FGP =} \KeywordTok{sum}\NormalTok{(FGM) }\OperatorTok{/}\StringTok{ }\KeywordTok{sum}\NormalTok{(FGA),}
-  \DataTypeTok{FGP3 =} \KeywordTok{sum}\NormalTok{(FGM3) }\OperatorTok{/}\StringTok{ }\KeywordTok{sum}\NormalTok{(FGA3),}
-  \DataTypeTok{FTP =} \KeywordTok{sum}\NormalTok{(FTM) }\OperatorTok{/}\StringTok{ }\KeywordTok{sum}\NormalTok{(FTA),}
-  \DataTypeTok{ORPG =} \KeywordTok{mean}\NormalTok{(OR),}
-  \DataTypeTok{DRPG =} \KeywordTok{mean}\NormalTok{(DR),}
-  \DataTypeTok{ASPG =} \KeywordTok{mean}\NormalTok{(AST),}
-  \DataTypeTok{TOPG =} \KeywordTok{mean}\NormalTok{(TO),}
-  \DataTypeTok{STPG =} \KeywordTok{mean}\NormalTok{(STL),}
-  \CommentTok{#BLPG = mean(BLK),}
-  \CommentTok{#PFPG = mean(PF),}
-  \DataTypeTok{MeFG =} \KeywordTok{mean}\NormalTok{(eFG),}
-  \DataTypeTok{MNetRTG =} \KeywordTok{mean}\NormalTok{(NetRTG),}
-  \CommentTok{#MORP = mean(ORP),}
-  \DataTypeTok{MPIE =} \KeywordTok{mean}\NormalTok{(PIE),}
-  \DataTypeTok{MPOS =} \KeywordTok{mean}\NormalTok{(POS),}
-  \DataTypeTok{EFG =}\NormalTok{ (}\KeywordTok{mean}\NormalTok{(FGM)}\OperatorTok{+}\FloatTok{0.5}\OperatorTok{*}\KeywordTok{mean}\NormalTok{(FGM3))}\OperatorTok{/}\KeywordTok{mean}\NormalTok{(FGA))}
-  
-\NormalTok{  , by =}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{'TeamID'}\NormalTok{, }\StringTok{'Season'}\NormalTok{)]}
-
-\NormalTok{################################################################################################################################}
-\CommentTok{#MPIE feature}
-
-\CommentTok{# Join team 1 data}
-\NormalTok{outcome_tournament <-}\StringTok{ }\NormalTok{outcome_tournament }\OperatorTok{%>%}\StringTok{ }
-\StringTok{  }\KeywordTok{left_join}\NormalTok{(}
-    \KeywordTok{select}\NormalTok{(stats_season, }
-\NormalTok{           Season, }
-\NormalTok{           TeamID, }
-           \DataTypeTok{t1_mpie =}\NormalTok{ MPIE),}
-    \DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"team1id"}\NormalTok{ =}\StringTok{ "TeamID"}\NormalTok{,}\StringTok{"season"}\NormalTok{ =}\StringTok{ "Season"}\NormalTok{))}
-
-\CommentTok{# Join team 2 data}
-\NormalTok{outcome_tournament <-}\StringTok{ }\NormalTok{outcome_tournament }\OperatorTok{%>%}\StringTok{ }
-\StringTok{  }\KeywordTok{left_join}\NormalTok{(}
-    \KeywordTok{select}\NormalTok{(stats_season, }
-\NormalTok{           Season, }
-\NormalTok{           TeamID, }
-           \DataTypeTok{t2_mpie =}\NormalTok{ MPIE),}
-    \DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"team2id"}\NormalTok{ =}\StringTok{ "TeamID"}\NormalTok{,}\StringTok{"season"}\NormalTok{ =}\StringTok{ "Season"}\NormalTok{))}
-
-\NormalTok{################################}
-\CommentTok{#Netrtg feature}
-
-\CommentTok{# Join team 1 data}
-\NormalTok{outcome_tournament <-}\StringTok{ }\NormalTok{outcome_tournament }\OperatorTok{%>%}\StringTok{ }
-\StringTok{  }\KeywordTok{left_join}\NormalTok{(}
-    \KeywordTok{select}\NormalTok{(stats_season, }
-\NormalTok{           Season, }
-\NormalTok{           TeamID, }
-           \DataTypeTok{t1_netrtg =}\NormalTok{ MNetRTG),}
-    \DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"team1id"}\NormalTok{ =}\StringTok{ "TeamID"}\NormalTok{,}\StringTok{"season"}\NormalTok{ =}\StringTok{ "Season"}\NormalTok{))}
-
-\CommentTok{# Join team 2 data}
-\NormalTok{outcome_tournament <-}\StringTok{ }\NormalTok{outcome_tournament }\OperatorTok{%>%}\StringTok{ }
-\StringTok{  }\KeywordTok{left_join}\NormalTok{(}
-    \KeywordTok{select}\NormalTok{(stats_season, }
-\NormalTok{           Season, }
-\NormalTok{           TeamID, }
-           \DataTypeTok{t2_netrtg =}\NormalTok{ MNetRTG),}
-    \DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"team2id"}\NormalTok{ =}\StringTok{ "TeamID"}\NormalTok{,}\StringTok{"season"}\NormalTok{ =}\StringTok{ "Season"}\NormalTok{))}
-
-
-
-\NormalTok{### Load data}
-
-\CommentTok{#sample_submission <- read.csv(paste(dir,'SampleSubmissionStage2.csv',sep=''))#2019 every possible matchup -> can only check by submitting to Kaggle}
-\NormalTok{sample_submission <-}\StringTok{ }\KeywordTok{read.csv}\NormalTok{(}\KeywordTok{paste}\NormalTok{(dir,}\StringTok{'SampleSubmissionStage1.csv'}\NormalTok{,}\DataTypeTok{sep=}\StringTok{''}\NormalTok{))}\CommentTok{#2014-2018 every possible matchup }
-
-
-
-
-\NormalTok{#####################################################################################################}
-\CommentTok{#d_ss -> same as outcome_tournament but with sample_submission format (every possible matchup)}
-
-\NormalTok{### Join team data and ranking data}
-
-\NormalTok{d_ss <-}\StringTok{ }\NormalTok{sample_submission}
-
-
-\CommentTok{# Add season, team1id and team2id columns from sample submission ID}
-\NormalTok{d_ss <-}\StringTok{ }\NormalTok{d_ss }\OperatorTok{%>%}\StringTok{ }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{season =} \KeywordTok{as.numeric}\NormalTok{(}\KeywordTok{gsub}\NormalTok{(}\StringTok{"(.*)_(.*)_(.*)"}\NormalTok{,ID, }\DataTypeTok{replacement =} \StringTok{"}\CharTok{\textbackslash{}\textbackslash{}}\StringTok{1"}\NormalTok{)), }
-                        \DataTypeTok{team1id =}  \KeywordTok{as.numeric}\NormalTok{(}\KeywordTok{gsub}\NormalTok{(}\StringTok{"(.*)_(.*)_(.*)"}\NormalTok{,ID, }\DataTypeTok{replacement =} \StringTok{"}\CharTok{\textbackslash{}\textbackslash{}}\StringTok{2"}\NormalTok{)),}
-                        \DataTypeTok{team2id =}  \KeywordTok{as.numeric}\NormalTok{(}\KeywordTok{gsub}\NormalTok{(}\StringTok{"(.*)_(.*)_(.*)"}\NormalTok{,ID, }\DataTypeTok{replacement =} \StringTok{"}\CharTok{\textbackslash{}\textbackslash{}}\StringTok{3"}\NormalTok{)))}
-
-\CommentTok{# Add rank data}
-
-\CommentTok{# team 1}
-\NormalTok{d_ss <-}\StringTok{ }\NormalTok{d_ss }\OperatorTok{%>%}\StringTok{ }
-\StringTok{  }\KeywordTok{left_join}\NormalTok{(}
-\NormalTok{    dplyr}\OperatorTok{::}\KeywordTok{select}\NormalTok{(dseeds_tournament, }\DataTypeTok{t1_rank =}\NormalTok{ ranking, }\DataTypeTok{t1_rank_n =}\NormalTok{ rank_num, teamid, season), }
-    \DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"team1id"}\NormalTok{=}\StringTok{"teamid"}\NormalTok{,}\StringTok{"season"}\NormalTok{=}\StringTok{"season"}\NormalTok{)) }
-
-\CommentTok{# team 2}
-\NormalTok{d_ss <-}\StringTok{ }\NormalTok{d_ss }\OperatorTok{%>%}\StringTok{ }
-\StringTok{  }\KeywordTok{left_join}\NormalTok{(}
-\NormalTok{    dplyr}\OperatorTok{::}\KeywordTok{select}\NormalTok{(dseeds_tournament, }\DataTypeTok{t2_rank =}\NormalTok{ ranking, }\DataTypeTok{t2_rank_n =}\NormalTok{ rank_num, teamid, season), }
-    \DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"team2id"}\NormalTok{=}\StringTok{"teamid"}\NormalTok{,}\StringTok{"season"}\NormalTok{=}\StringTok{"season"}\NormalTok{)) }
-
-
-
-\NormalTok{### Join ELO rating data}
-\CommentTok{#season_elos <- read.csv("../input/fivethirtyeight-elo-ratings/season_elos.csv") %>% rename(teamid = team_id)}
-\NormalTok{season_elos <-}\StringTok{ }\KeywordTok{read.csv}\NormalTok{(}\KeywordTok{paste}\NormalTok{(dir,}\StringTok{'season_elos.csv'}\NormalTok{,}\DataTypeTok{sep=}\StringTok{''}\NormalTok{)) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{rename}\NormalTok{(}\DataTypeTok{teamid =}\NormalTok{ team_id)}
-
-\CommentTok{# Join team 1 data}
-\NormalTok{d_ss <-}\StringTok{ }\NormalTok{d_ss }\OperatorTok{%>%}\StringTok{ }
-\StringTok{  }\KeywordTok{left_join}\NormalTok{(}
-    \KeywordTok{select}\NormalTok{(season_elos, }
-\NormalTok{           season, }
-\NormalTok{           teamid, }
-           \DataTypeTok{t1_season_elo =}\NormalTok{ season_elo),}
-    \DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"team1id"}\NormalTok{ =}\StringTok{ "teamid"}\NormalTok{,}\StringTok{"season"}\NormalTok{ =}\StringTok{ "season"}\NormalTok{))}
-
-
-\CommentTok{# Join team 2 data}
-\NormalTok{d_ss <-}\StringTok{ }\NormalTok{d_ss }\OperatorTok{%>%}\StringTok{ }
-\StringTok{  }\KeywordTok{left_join}\NormalTok{(}
-    \KeywordTok{select}\NormalTok{(season_elos, }
-\NormalTok{           season, }
-\NormalTok{           teamid, }
-           \DataTypeTok{t2_season_elo =}\NormalTok{ season_elo),}
-    \DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"team2id"}\NormalTok{ =}\StringTok{ "teamid"}\NormalTok{,}\StringTok{"season"}\NormalTok{ =}\StringTok{ "season"}\NormalTok{))}
-
-
-\CommentTok{# Key differences between winner and loser}
-\CommentTok{#Add elop probability}
-
-\NormalTok{d_ss <-}\StringTok{ }\NormalTok{d_ss }\OperatorTok{%>%}\StringTok{ }
-\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{elo_diff =}\NormalTok{ t1_season_elo }\OperatorTok{-}\StringTok{ }\NormalTok{t2_season_elo,}
-         \DataTypeTok{elo_prob_1 =} \DecValTok{1}\OperatorTok{/}\NormalTok{(}\DecValTok{10}\OperatorTok{^}\NormalTok{(}\OperatorTok{-}\NormalTok{elo_diff}\OperatorTok{/}\DecValTok{400}\NormalTok{)}\OperatorTok{+}\DecValTok{1}\NormalTok{),}
-         \DataTypeTok{diff_rank =}\NormalTok{ t1_rank_n }\OperatorTok{-}\StringTok{ }\NormalTok{t2_rank_n}
-\NormalTok{  )}
-
-\CommentTok{#PIE feature}
-\NormalTok{d_ss <-}\StringTok{ }\NormalTok{d_ss[d_ss}\OperatorTok{$}\NormalTok{season}\OperatorTok{>=}\DecValTok{2003}\NormalTok{,]}
-\CommentTok{# Join team 1 data}
-\NormalTok{d_ss <-}\StringTok{ }\NormalTok{d_ss }\OperatorTok{%>%}\StringTok{ }
-\StringTok{  }\KeywordTok{left_join}\NormalTok{(}
-    \KeywordTok{select}\NormalTok{(stats_season, }
-\NormalTok{           Season, }
-\NormalTok{           TeamID, }
-           \DataTypeTok{t1_mpie =}\NormalTok{ MPIE),}
-    \DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"team1id"}\NormalTok{ =}\StringTok{ "TeamID"}\NormalTok{,}\StringTok{"season"}\NormalTok{ =}\StringTok{ "Season"}\NormalTok{))}
-
-\CommentTok{# Join team 2 data}
-\NormalTok{d_ss <-}\StringTok{ }\NormalTok{d_ss }\OperatorTok{%>%}\StringTok{ }
-\StringTok{  }\KeywordTok{left_join}\NormalTok{(}
-    \KeywordTok{select}\NormalTok{(stats_season, }
-\NormalTok{           Season, }
-\NormalTok{           TeamID, }
-           \DataTypeTok{t2_mpie =}\NormalTok{ MPIE),}
-    \DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"team2id"}\NormalTok{ =}\StringTok{ "TeamID"}\NormalTok{,}\StringTok{"season"}\NormalTok{ =}\StringTok{ "Season"}\NormalTok{))}
-
-\NormalTok{################################}
-\CommentTok{#Netrtg}
-
-\CommentTok{# Join team 1 data}
-\NormalTok{d_ss <-}\StringTok{ }\NormalTok{d_ss }\OperatorTok{%>%}\StringTok{ }
-\StringTok{  }\KeywordTok{left_join}\NormalTok{(}
-    \KeywordTok{select}\NormalTok{(stats_season, }
-\NormalTok{           Season, }
-\NormalTok{           TeamID, }
-           \DataTypeTok{t1_netrtg =}\NormalTok{ MNetRTG),}
-    \DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"team1id"}\NormalTok{ =}\StringTok{ "TeamID"}\NormalTok{,}\StringTok{"season"}\NormalTok{ =}\StringTok{ "Season"}\NormalTok{))}
-
-\CommentTok{# Join team 2 data}
-\NormalTok{d_ss <-}\StringTok{ }\NormalTok{d_ss }\OperatorTok{%>%}\StringTok{ }
-\StringTok{  }\KeywordTok{left_join}\NormalTok{(}
-    \KeywordTok{select}\NormalTok{(stats_season, }
-\NormalTok{           Season, }
-\NormalTok{           TeamID, }
-           \DataTypeTok{t2_netrtg =}\NormalTok{ MNetRTG),}
-    \DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"team2id"}\NormalTok{ =}\StringTok{ "TeamID"}\NormalTok{,}\StringTok{"season"}\NormalTok{ =}\StringTok{ "Season"}\NormalTok{))}
-
-
-
-\NormalTok{### Make predictions based on model }
-\NormalTok{train <-}\StringTok{ }\NormalTok{outcome_tournament }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(season }\OperatorTok{<=}\StringTok{ }\DecValTok{2013}\NormalTok{) }\CommentTok{#Takes occurred tournament games results (team1win)}
-
-
-
-\NormalTok{test_outcome_tournament <-}\StringTok{ }\NormalTok{outcome_tournament }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(season }\OperatorTok{>}\StringTok{ }\DecValTok{2013}\NormalTok{) }\CommentTok{#Test sample, target team1win}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{train}\OperatorTok{$}\NormalTok{daynum <-}\StringTok{ }\OtherTok{NULL}
-\NormalTok{train}\OperatorTok{$}\NormalTok{t1_rank <-}\StringTok{ }\OtherTok{NULL}
-\NormalTok{train}\OperatorTok{$}\NormalTok{t2_rank <-}\StringTok{ }\OtherTok{NULL}
-\KeywordTok{kable}\NormalTok{(train[}\KeywordTok{sample}\NormalTok{(}\KeywordTok{nrow}\NormalTok{(train), }\DecValTok{6}\NormalTok{), ][,}\DecValTok{1}\OperatorTok{:}\DecValTok{10}\NormalTok{])}
+\NormalTok{training_set <-}\StringTok{ }\NormalTok{train[,}\OperatorTok{-}\NormalTok{(}\DecValTok{1}\OperatorTok{:}\DecValTok{4}\NormalTok{)]}
+\NormalTok{col_order <-}\StringTok{ }\KeywordTok{colnames}\NormalTok{(training_set)}
+
+\NormalTok{test_set<-}\StringTok{ }\NormalTok{d_ss[,}\OperatorTok{-}\DecValTok{1}\NormalTok{][,}\OperatorTok{-}\NormalTok{(}\DecValTok{2}\OperatorTok{:}\DecValTok{4}\NormalTok{)]}
+\KeywordTok{colnames}\NormalTok{(test_set)[}\DecValTok{1}\NormalTok{] <-}\StringTok{ "team1win"}
+\NormalTok{test_set <-}\StringTok{ }\NormalTok{test_set[, col_order]}
+\NormalTok{training_set}\OperatorTok{$}\NormalTok{elo_diff <-}\StringTok{ }\OtherTok{NULL}
+\NormalTok{test_set}\OperatorTok{$}\NormalTok{elo_diff <-}\StringTok{ }\OtherTok{NULL}
+\NormalTok{training_set}\OperatorTok{$}\NormalTok{diff_rank <-}\StringTok{ }\OtherTok{NULL}
+\NormalTok{test_set}\OperatorTok{$}\NormalTok{diff_rank <-}\StringTok{ }\OtherTok{NULL}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{kable}\NormalTok{(training_set[}\KeywordTok{sample}\NormalTok{(}\KeywordTok{nrow}\NormalTok{(train), }\DecValTok{6}\NormalTok{), ][,}\DecValTok{1}\OperatorTok{:}\DecValTok{10}\NormalTok{])}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{longtable}[]{@{}lrrrrrrrrrr@{}}
 \toprule
-& season & team1id & team2id & team1win & t1\_rank\_n & t2\_rank\_n &
-diff\_rank & t1\_season\_elo & t2\_season\_elo &
-elo\_diff\tabularnewline
+& team1win & t1\_rank\_n & t2\_rank\_n & t1\_season\_elo &
+t2\_season\_elo & elo\_prob\_1 & t1\_mpie & t2\_mpie & t1\_netrtg &
+t2\_netrtg\tabularnewline
 \midrule
 \endhead
-264 & 2007 & 1266 & 1277 & 0 & 8 & 9 & -1 & 1827.897 & 1852.932 &
--25.03541\tabularnewline
-518 & 2011 & 1140 & 1459 & 1 & 3 & 14 & -11 & 1948.359 & 1639.349 &
-309.00998\tabularnewline
-377 & 2008 & 1390 & 1400 & 0 & 3 & 2 & 1 & 1856.137 & 1968.462 &
--112.32458\tabularnewline
-257 & 2007 & 1197 & 1310 & 0 & 1 & 1 & 0 & 1329.205 & 1533.327 &
--204.12222\tabularnewline
-88 & 2004 & 1272 & 1376 & 1 & 7 & 10 & -3 & 1849.112 & 1788.532 &
-60.57953\tabularnewline
-18 & 2003 & 1386 & 1120 & 0 & 7 & 10 & -3 & 1840.296 & 1722.967 &
-117.32938\tabularnewline
+356 & 1 & 3 & 6 & 1856.137 & 1887.825 & 0.4545238 & 0.6262022 &
+0.6137100 & 17.895837 & 23.247435\tabularnewline
+685 & 0 & 6 & 3 & 1801.625 & 1926.582 & 0.3275457 & 0.5565142 &
+0.5550160 & 12.281486 & 2.793131\tabularnewline
+245 & 0 & 3 & 2 & 1959.413 & 1885.683 & 0.6045406 & 0.5616776 &
+0.6209522 & 7.674065 & 20.702310\tabularnewline
+419 & 1 & 2 & 7 & 2041.983 & 1914.979 & 0.6750457 & 0.6355244 &
+0.5715324 & 25.295345 & 5.442056\tabularnewline
+290 & 0 & 4 & 5 & 1879.756 & 1726.106 & 0.7077496 & 0.6142832 &
+0.6469077 & 16.819462 & 35.533848\tabularnewline
+454 & 1 & 2 & 15 & 1894.235 & 1575.011 & 0.8626647 & 0.6026319 &
+0.5514985 & 18.796633 & 5.907027\tabularnewline
 \bottomrule
 \end{longtable}
 
@@ -598,6 +274,391 @@ elo\_diff\tabularnewline
 \CommentTok{#Merge d_ss with test_outcome_tournament (games that occurred) -> validation}
 \CommentTok{#validation has target and Pred for every game that occurered 2014-2018}
 \CommentTok{#Apply LogLoss to validation$Pred and validation$team1win}
+
+
+\CommentTok{# #logistic regression model: differences}
+\CommentTok{# model <- glm(team1win ~ }
+\CommentTok{#                diff_rank +}
+\CommentTok{#                t1_rank_n +}
+\CommentTok{#                #t2_rank_n +}
+\CommentTok{#                t1_season_elo +}
+\CommentTok{#                t2_season_elo +}
+\CommentTok{#                #elo_prob_1 +}
+\CommentTok{#                t1_mpie +}
+\CommentTok{#                t2_mpie +}
+\CommentTok{#                t1_netrtg +}
+\CommentTok{#                t2_netrtg}
+\CommentTok{#              ,}
+\CommentTok{#              }
+\CommentTok{#              data = training_set, family = binomial)}
+
+\NormalTok{model <-}\StringTok{ }\KeywordTok{glm}\NormalTok{(team1win }\OperatorTok{~}\StringTok{ }\NormalTok{.}
+\NormalTok{             ,}
+             
+             \DataTypeTok{data =}\NormalTok{ training_set, }\DataTypeTok{family =}\NormalTok{ binomial)}
+
+
+\CommentTok{#Predict on every possible matchup}
+\NormalTok{predict <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{Pred =} \KeywordTok{predict}\NormalTok{(model, }\DataTypeTok{newdata =}\NormalTok{ test_set, }\DataTypeTok{type =} \StringTok{'response'}\NormalTok{))}
+\NormalTok{d_ss <-}\StringTok{ }\NormalTok{d_ss }\OperatorTok{%>%}\StringTok{ }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{Pred =}\NormalTok{ predict}\OperatorTok{$}\NormalTok{Pred)}\CommentTok{# %>% dplyr::select(ID, Pred) Change sample submission pred=0.5 to model predicition}
+
+\NormalTok{d_ss_fin <-}\StringTok{ }\NormalTok{sample_submission }\OperatorTok{%>%}\StringTok{ }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{Pred =}\NormalTok{ d_ss}\OperatorTok{$}\NormalTok{Pred) }\CommentTok{#only matchup and prediction -> Results for kaggle}
+\CommentTok{#write.csv(d_ss_fin, "submission_stage_2.csv", row.names = FALSE)}
+
+\KeywordTok{summary}\NormalTok{(model)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Call:
+## glm(formula = team1win ~ ., family = binomial, data = training_set)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -2.3242  -0.8802   0.2700   0.8947   2.5987  
+## 
+## Coefficients:
+##                Estimate Std. Error z value Pr(>|z|)   
+## (Intercept)   -7.206253   4.727048  -1.524  0.12739   
+## t1_rank_n     -0.089333   0.039574  -2.257  0.02398 * 
+## t2_rank_n      0.112791   0.041428   2.723  0.00648 **
+## t1_season_elo  0.003624   0.003197   1.133  0.25708   
+## t2_season_elo -0.002286   0.003169  -0.721  0.47082   
+## elo_prob_1    -0.774010   2.608352  -0.297  0.76666   
+## t1_mpie        6.509649   4.661552   1.396  0.16258   
+## t2_mpie        2.520763   4.635233   0.544  0.58656   
+## t1_netrtg      0.001556   0.018493   0.084  0.93293   
+## t2_netrtg     -0.021832   0.018828  -1.160  0.24624   
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 988.02  on 712  degrees of freedom
+## Residual deviance: 764.18  on 703  degrees of freedom
+## AIC: 784.18
+## 
+## Number of Fisher Scoring iterations: 5
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{kable}\NormalTok{(}\KeywordTok{summary}\NormalTok{(model)}\OperatorTok{$}\NormalTok{coefficients)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{longtable}[]{@{}lrrrr@{}}
+\toprule
+& Estimate & Std. Error & z value &
+Pr(\textgreater{}\textbar{}z\textbar{})\tabularnewline
+\midrule
+\endhead
+(Intercept) & -7.2062527 & 4.7270477 & -1.5244722 &
+0.1273908\tabularnewline
+t1\_rank\_n & -0.0893334 & 0.0395736 & -2.2574005 &
+0.0239831\tabularnewline
+t2\_rank\_n & 0.1127913 & 0.0414276 & 2.7226099 &
+0.0064768\tabularnewline
+t1\_season\_elo & 0.0036236 & 0.0031973 & 1.1333294 &
+0.2570760\tabularnewline
+t2\_season\_elo & -0.0022855 & 0.0031693 & -0.7211487 &
+0.4708180\tabularnewline
+elo\_prob\_1 & -0.7740098 & 2.6083520 & -0.2967428 &
+0.7666628\tabularnewline
+t1\_mpie & 6.5096493 & 4.6615522 & 1.3964553 & 0.1625774\tabularnewline
+t2\_mpie & 2.5207630 & 4.6352331 & 0.5438266 & 0.5865608\tabularnewline
+t1\_netrtg & 0.0015563 & 0.0184935 & 0.0841542 &
+0.9329338\tabularnewline
+t2\_netrtg & -0.0218315 & 0.0188280 & -1.1595228 &
+0.2462432\tabularnewline
+\bottomrule
+\end{longtable}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#Merge every possible matchup result predictions with real games and check test error}
+\NormalTok{test_result <-}\StringTok{ }\KeywordTok{merge}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ test_outcome_tournament, }\DataTypeTok{y =}\NormalTok{ d_ss[}\DecValTok{2}\OperatorTok{:}\DecValTok{5}\NormalTok{], }\DataTypeTok{by=}\KeywordTok{c}\NormalTok{(}\StringTok{"team1id"}\NormalTok{,}\StringTok{"team2id"}\NormalTok{,}\StringTok{"season"}\NormalTok{), }\DataTypeTok{all =} \OtherTok{FALSE}\NormalTok{)}
+
+\KeywordTok{library}\NormalTok{(MLmetrics)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Attaching package: 'MLmetrics'
+\end{verbatim}
+
+\begin{verbatim}
+## The following object is masked from 'package:base':
+## 
+##     Recall
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#library(forecast)}
+
+\KeywordTok{LogLoss}\NormalTok{(}\DataTypeTok{y_pred =}\NormalTok{ test_result}\OperatorTok{$}\NormalTok{Pred, }\DataTypeTok{y_true =}\NormalTok{ test_result}\OperatorTok{$}\NormalTok{team1win)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 0.5589786
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{pca_ncaa <-}\StringTok{ }\KeywordTok{PCA}\NormalTok{(training_set, }\DataTypeTok{quali.sup =} \DecValTok{1}\NormalTok{, }\DataTypeTok{scale.unit =} \OtherTok{TRUE}\NormalTok{,  }\DataTypeTok{graph =} \OtherTok{TRUE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{data_prep_files/figure-latex/unnamed-chunk-5-1.pdf}
+\includegraphics{data_prep_files/figure-latex/unnamed-chunk-5-2.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# #Regularized Logistic Regression}
+\CommentTok{# #Total fail-> predictions wrong}
+\CommentTok{# }
+\CommentTok{# set.seed(123)}
+\CommentTok{# library(glmnet)}
+\CommentTok{# x <- model.matrix(team1win~., training_set)}
+\CommentTok{# y <- training_set$team1win}
+\CommentTok{# cv.lasso <- cv.glmnet(x, y , alpha = 1, family = "binomial")}
+\CommentTok{# # Fit the final model on the training data}
+\CommentTok{# model <- glmnet(x, y, alpha = 1, family = "binomial",}
+\CommentTok{#                 lambda = cv.lasso$lambda.min)}
+\CommentTok{# plot(cv.lasso)}
+\CommentTok{# # Display regression coefficients}
+\CommentTok{# coef(model)}
+\CommentTok{# }
+\CommentTok{# #### glmnet test}
+\CommentTok{# }
+\CommentTok{# x.test <- model.matrix(team1win~., test_set)}
+\CommentTok{# }
+\CommentTok{# probabilities <- model %>% predict(newx = x.test)}
+\CommentTok{# ```}
+\CommentTok{# }
+\CommentTok{# ```\{r\}}
+\CommentTok{# #Neural Network}
+\CommentTok{# #Scale inputs}
+\CommentTok{# library(nnet)}
+\CommentTok{# library(caret)}
+\CommentTok{# library(neuralnet)}
+\CommentTok{# }
+\CommentTok{# }
+\CommentTok{# train_nnet_scaled <- as.data.frame(scale(training_set[-1]))}
+\CommentTok{# train_nnet_scaled <- cbind(training_set$team1win,train_nnet_scaled)}
+\CommentTok{# colnames(train_nnet_scaled)[1] <- "team1win"}
+\CommentTok{# #train_nnet_scaled$team1win<- factor(train_nnet_scaled$team1win, labels=c(0,1))#not for neuralnet}
+\CommentTok{# }
+\CommentTok{# #nn1 <- nnet(team1win~t1_rank_n+t2_rank_n+elo_diff,data=train_nnet_scaled,entropy=T,size=100,decay=0,maxit=1000,trace=T)}
+\CommentTok{# #predict <- data.frame(Pred = predict(nn1, newdata = d_ss_nnet_scaled))}
+\CommentTok{# }
+\CommentTok{# #10 fold cv trial}
+\CommentTok{# }
+\CommentTok{# ## We first split the available data into learning and test sets, selecting randomly 2/3 and 1/3 of the data}
+\CommentTok{# ## We do this for a honest estimation of prediction performance}
+\CommentTok{# }
+\CommentTok{# names <- colnames(train_nnet_scaled)[-1] #choose the names you want}
+\CommentTok{# a <- as.formula(paste('team1win ~ ' ,paste(names,collapse='+')))}
+\CommentTok{# a}
+\CommentTok{# #neuralnet DOESN'T need factors as target}
+\CommentTok{# nn <- neuralnet(a, data=train_nnet_scaled, hidden=c(1), linear.output=FALSE, threshold=0.01)}
+\CommentTok{# nn$result.matrix}
+\CommentTok{# plot(nn)}
+\CommentTok{# }
+\CommentTok{# }
+\CommentTok{# }
+\CommentTok{# #nnet by means of train function, needs factors as target}
+\CommentTok{# # model <- train(team1win~., data=train_nnet_scaled, method='nnet', maxit = 300,}
+\CommentTok{# #                trControl=trainControl(method='cv'))}
+\CommentTok{# test_set_scaled <- scale(test_set)}
+\CommentTok{# }
+\CommentTok{# #predict <- data.frame(Pred = predict (model, newdata=d_ss_nnet_scaled, type="prob"))}
+\CommentTok{# }
+\CommentTok{# test_set_scaled <- subset(test_set_scaled, select = colnames(test_set_scaled)[-1])}
+\CommentTok{# nn.results <- compute(nn, test_set_scaled)}
+\CommentTok{# }
+\CommentTok{# #train in nnet prediction}
+\CommentTok{# #d_ss <- d_ss %>% mutate(Pred = predict$Pred.1)# %>% dplyr::select(ID, Pred) Change sample submission pred=0.5 to model predicition}
+\CommentTok{# }
+\CommentTok{# #neuralnet prediction}
+\CommentTok{# #d_ss$Pred <- NULL}
+\CommentTok{# d_ss <- d_ss %>% mutate(Pred = as.numeric(nn.results$net.result))}
+\CommentTok{# }
+\CommentTok{# }
+\CommentTok{# }
+\CommentTok{# }
+\CommentTok{# }
+\CommentTok{# # d_ss_fin <- sample_submission %>% mutate(Pred = d_ss$Pred) #only matchup and prediction -> Results for kaggle}
+\CommentTok{# # #write.csv(d_ss_fin, "submission_stage_2.csv", row.names = FALSE)}
+\CommentTok{# # }
+\CommentTok{# # }
+\CommentTok{# # #############}
+\CommentTok{# # set.seed(43)}
+\CommentTok{# # N <- nrow(train_nnet_scaled)}
+\CommentTok{# # learn <- sample(1:N, round(2*N/3))}
+\CommentTok{# # (sizes <- 2*seq(1,10,by=2)) #different sizes}
+\CommentTok{# # }
+\CommentTok{# # ## specify 10x10 CV}
+\CommentTok{# # trc <- trainControl (method="repeatedcv", number=10, repeats=10)}
+\CommentTok{# # }
+\CommentTok{# # model.10x10CV <- train (team1win ~., data = train_nnet_scaled, subset=learn, method='nnet', maxit = 500, trace = FALSE,tuneGrid = expand.grid(.size=sizes,.decay=0), trControl=trc)}
+\CommentTok{# }
+\CommentTok{# }
+\CommentTok{# ```}
+\CommentTok{# }
+\CommentTok{# ```\{r\}}
+\CommentTok{# #We can only test with 2014-2018 data}
+\CommentTok{# #Merge every possible matchup result predictions with real games and check test error}
+\CommentTok{# test_result <- merge(x = test_outcome_tournament, y = d_ss[2:5], by=c("team1id","team2id","season"), all = FALSE)}
+\CommentTok{# }
+\CommentTok{# library(MLmetrics)}
+\CommentTok{# #library(forecast)}
+\CommentTok{# }
+\CommentTok{# LogLoss(y_pred = test_result$Pred, y_true = test_result$team1win)}
+\CommentTok{# }
+\CommentTok{# test_result$Pred<- factor(test_result$Pred, labels=c(0,1))#}
+\CommentTok{# Accuracy(y_pred = test_result$Pred, y_true = test_result$team1win)}
+\CommentTok{# }
+\CommentTok{# ```}
+\CommentTok{# }
+\CommentTok{# ```\{r,echo=FALSE\}}
+\CommentTok{# library(rpart)}
+\CommentTok{# train_tree <- training_set}
+\CommentTok{# train_tree$team1win<- factor(train_tree$team1win, labels=c(0,1))#not for neuralnet}
+\CommentTok{# }
+\CommentTok{# DecisionTree = rpart(team1win ~ ., data=train_tree,control=rpart.control(cp=0.001, xval=10),method='class')}
+\CommentTok{# printcp(DecisionTree)}
+\CommentTok{# }
+\CommentTok{# treeSize = DecisionTree$cptable[,2]+1 #nsplit}
+\CommentTok{# treeImpurity = DecisionTree$cptable[,3] #rel error}
+\CommentTok{# cvImpurity = DecisionTree$cptable[,4] #xerror}
+\CommentTok{# }
+\CommentTok{# plot(treeSize, treeImpurity, main="R(T)", xlab="size of the tree", ylab="Relativity Impurity", type="o", col='red') }
+\CommentTok{# lines(treeSize, cvImpurity ,type="o", col='blue')}
+\CommentTok{# legend("topright", c("All training data","CV training data"), col=c('red', 'blue'), lty=1)}
+\CommentTok{# ```}
+\CommentTok{# }
+\CommentTok{# ```\{r, echo=FALSE\}}
+\CommentTok{# DecisionTree$cptable = as.data.frame(DecisionTree $cptable)}
+\CommentTok{# ind = which.min(DecisionTree$cptable$xerror)}
+\CommentTok{# xerr <-DecisionTree$cptable$xerror[ind]}
+\CommentTok{# xstd <-DecisionTree$cptable$xstd[ind]}
+\CommentTok{# }
+\CommentTok{# i = 1}
+\CommentTok{# while (DecisionTree$cptable$xerror[i] > xerr+xstd)\{}
+\CommentTok{#   i = i+1}
+\CommentTok{# \}}
+\CommentTok{# #alfa = DecisionTree$cptable$CP[i]}
+\CommentTok{# alfa = DecisionTree$cptable$CP[3]}
+\CommentTok{# }
+\CommentTok{# optimal <- prune(DecisionTree, cp=alfa)}
+\CommentTok{# par(mfrow = c(1,1), xpd = NA)}
+\CommentTok{# plot(optimal)}
+\CommentTok{# text(optimal, use.n=T,cex=0.8,col="blue")}
+\CommentTok{# }
+\CommentTok{# #Tree prediction}
+\CommentTok{# rpart_pred <- predict(DecisionTree,test_set,type='prob')[,1]}
+\CommentTok{# rpart_pred_class <- predict(DecisionTree,test_set,type='class')}
+\CommentTok{# d_ss <- d_ss %>% mutate(Pred = predict(DecisionTree,test_set,type='prob')[,1])}
+\CommentTok{# #d_ss <- d_ss %>% mutate(Pred = predict(DecisionTree,test_set,type='class'))}
+\CommentTok{# ```}
+\CommentTok{# }
+\CommentTok{# ```\{r, echo=FALSE\}}
+\CommentTok{# library(randomForest)}
+\CommentTok{# train_tree <- training_set}
+\CommentTok{# train_tree$team1win<- factor(train_tree$team1win, labels=c(0,1))#not for neuralnet}
+\CommentTok{# }
+\CommentTok{# #Convert d_ss_tree$team1win to categorical values}
+\CommentTok{# test_set_rf <- test_set}
+\CommentTok{# test_set_rf$team1win <- NULL}
+\CommentTok{# test_set_rf$team1win <- sample(c(0, 1), nrow(test_set_rf), replace=TRUE)}
+\CommentTok{# }
+\CommentTok{# test_set_rf <- test_set_rf[, col_order]}
+\CommentTok{# test_set_rf$team1win<- factor(test_set_rf$team1win, labels=c(0,1))}
+\CommentTok{# }
+\CommentTok{# random_forest <- randomForest(formula = team1win ~.,}
+\CommentTok{#                         data=train_tree,}
+\CommentTok{#                         mtry=3,      # three predictor-vars selected randomly at each split}
+\CommentTok{#                         xtest=test_set_rf[-1],}
+\CommentTok{#                         ytest=test_set_rf$team1win,}
+\CommentTok{#                         #ytest=as.factor(audit_imp$Adjusted[testRows]),}
+\CommentTok{#                         importance=T,}
+\CommentTok{#                         ntree=500,   # acceptably large value to ensure each sample row is predicted}
+\CommentTok{#                                      # at least 2-digit nbr of times on average}
+\CommentTok{#                         nodesize = 50,}
+\CommentTok{#                         maxnodes = 40,}
+\CommentTok{#                         norm.votes=T,}
+\CommentTok{#                         keep.forest=TRUE)}
+\CommentTok{# }
+\CommentTok{# #rf_predictions_prob <- predict(random_forest, test_set_rf, type='prob')}
+\CommentTok{# rf_predictions_class <- predict(random_forest, test_set_rf, type='class')}
+\CommentTok{# #d_ss <- d_ss %>% mutate(Pred = rf_predictions_prob[,2])#For prob}
+\CommentTok{# d_ss <- d_ss %>% mutate(Pred = rf_predictions_class)}
+\CommentTok{# # }
+\CommentTok{# # cf <- confusionMatrix(factor(df_rf_predictions), factor(rf_test$target), positive="1", dnn = c("Prediction", "True values"))}
+\CommentTok{# # draw_confusion_matrix(cf)}
+\CommentTok{# ```}
+\CommentTok{# }
+\CommentTok{# }
+\CommentTok{# ```\{r, echo=FALSE\}}
+\CommentTok{# library(caret)}
+\CommentTok{# train_tree <- train[,-(1:4)]}
+\CommentTok{# #train_tree$team1win<- factor(train_tree$team1win, labels=c(0,1))}
+\CommentTok{# train_tree$team1win<- factor(train_tree$team1win, labels=c("win","loss"))#not for neuralnet}
+\CommentTok{# }
+\CommentTok{# # Example of Bagging algorithms}
+\CommentTok{# control <- trainControl(method="repeatedcv", number=10, repeats=3)}
+\CommentTok{# seed <- 7}
+\CommentTok{# metric <- "logLoss"}
+\CommentTok{# # Bagged CART}
+\CommentTok{# set.seed(seed)}
+\CommentTok{# fit.treebag <- train(team1win~., data=train_tree, method="treebag", metric=metric, trControl=control)}
+\CommentTok{# # Random Forest}
+\CommentTok{# set.seed(seed)}
+\CommentTok{# fit.rf <- train(team1win~., data=train_tree, method="rf", metric=metric, trControl=control)}
+\CommentTok{# # summarize results}
+\CommentTok{# bagging_results <- resamples(list(treebag=fit.treebag, rf=fit.rf))}
+\CommentTok{# summary(bagging_results)}
+\CommentTok{# dotplot(bagging_results)}
+\CommentTok{# ```}
+\CommentTok{# }
+\CommentTok{# ```\{r, echo=FALSE\}}
+\CommentTok{# }
+\CommentTok{# # Example of Stacking algorithms}
+\CommentTok{# # create submodels}
+\CommentTok{# train_ensemble <- training_set}
+\CommentTok{# train_ensemble$diff_rank <- NULL}
+\CommentTok{# train_ensemble$elo_diff <- NULL}
+\CommentTok{# train_ensemble$team1win<- factor(train_ensemble$team1win, labels=c("win","loss"))#not for neuralnet}
+\CommentTok{# }
+\CommentTok{# library(caretEnsemble)}
+\CommentTok{# control <- trainControl(method="repeatedcv", number=10, repeats=10, savePredictions='all', classProbs=TRUE,summaryFunction = mnLogLoss)}
+\CommentTok{# algorithmList <- c('lda', 'glm', 'svmRadial')#knn disaster}
+\CommentTok{# #algorithmList <- c('rpart', 'glm','svmRadial')}
+\CommentTok{# set.seed(7)}
+\CommentTok{# metric <- "logLoss"}
+\CommentTok{# models <- caretList(team1win~., data=train_ensemble, trControl=control, methodList=algorithmList, metric=metric)}
+\CommentTok{# }
+\CommentTok{# }
+\CommentTok{# }
+\CommentTok{# greedy_ensemble <- caretEnsemble(}
+\CommentTok{#   models, }
+\CommentTok{#   metric="logLoss",}
+\CommentTok{#   trControl=control)}
+\CommentTok{# summary(greedy_ensemble)}
+\CommentTok{# }
+\CommentTok{# kable(modelCor(resamples(models)))}
+\CommentTok{# }
+\CommentTok{# summary(greedy_ensemble)}
+\CommentTok{# results <- resamples(models)}
+\CommentTok{# summary(results)}
+\CommentTok{# dotplot(results)}
+\CommentTok{# ensemble_pred <- predict(greedy_ensemble, newdata=test_set,type='prob')}
+\CommentTok{# d_ss <- d_ss %>% mutate(Pred = ensemble_pred)#F}
 \end{Highlighting}
 \end{Shaded}
 
