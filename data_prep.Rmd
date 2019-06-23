@@ -7,7 +7,7 @@ author:
 date: "February 20, 2018"
 output: 
   pdf_document: 
-    keep_tex: yes8
+    keep_tex: yes
 ---
 
 ```{r}
@@ -435,7 +435,7 @@ predict <- data.frame(Pred = predict(model, newdata = test_set, type = 'response
 d_ss <- d_ss %>% mutate(Pred = predict$Pred)# %>% dplyr::select(ID, Pred) Change sample submission pred=0.5 to model predicition
 
 d_ss_fin <- sample_submission %>% mutate(Pred = d_ss$Pred) #only matchup and prediction -> Results for kaggle
-write.csv(d_ss_fin, "submission_stage_2.csv", row.names = FALSE)
+#write.csv(d_ss_fin, "submission_stage_2.csv", row.names = FALSE)
 
 summary(model)
 ```
@@ -474,7 +474,7 @@ library(neuralnet)
 train_nnet_scaled <- as.data.frame(scale(training_set[-1]))
 train_nnet_scaled <- cbind(training_set$team1win,train_nnet_scaled)
 colnames(train_nnet_scaled)[1] <- "team1win"
-train_nnet_scaled$team1win<- factor(train_nnet_scaled$team1win, labels=c(0,1))#not for neuralnet
+#train_nnet_scaled$team1win<- factor(train_nnet_scaled$team1win, labels=c(0,1))#not for neuralnet
 
 #nn1 <- nnet(team1win~t1_rank_n+t2_rank_n+elo_diff,data=train_nnet_scaled,entropy=T,size=100,decay=0,maxit=1000,trace=T)
 #predict <- data.frame(Pred = predict(nn1, newdata = d_ss_nnet_scaled))
@@ -488,7 +488,7 @@ names <- colnames(train_nnet_scaled)[-1] #choose the names you want
 a <- as.formula(paste('team1win ~ ' ,paste(names,collapse='+')))
 a
 #neuralnet DOESN'T need factors as target
-nn <- neuralnet(a, data=train_nnet_scaled, hidden=c(1,1), linear.output=FALSE, threshold=0.01)
+nn <- neuralnet(a, data=train_nnet_scaled, hidden=c(1), linear.output=FALSE, threshold=0.01)
 nn$result.matrix
 plot(nn)
 
@@ -544,6 +544,8 @@ library(MLmetrics)
 #library(forecast)
 
 LogLoss(y_pred = test_result$Pred, y_true = test_result$team1win)
+
+test_result$Pred<- factor(test_result$Pred, labels=c(0,1))#
 Accuracy(y_pred = test_result$Pred, y_true = test_result$team1win)
 
 ```
@@ -575,8 +577,8 @@ i = 1
 while (DecisionTree$cptable$xerror[i] > xerr+xstd){
   i = i+1
 }
-alfa = DecisionTree$cptable$CP[i]
-#alfa = DecisionTree$cptable$CP[3]
+#alfa = DecisionTree$cptable$CP[i]
+alfa = DecisionTree$cptable$CP[3]
 
 optimal <- prune(DecisionTree, cp=alfa)
 par(mfrow = c(1,1), xpd = NA)
@@ -587,7 +589,7 @@ text(optimal, use.n=T,cex=0.8,col="blue")
 rpart_pred <- predict(DecisionTree,test_set,type='prob')[,1]
 rpart_pred_class <- predict(DecisionTree,test_set,type='class')
 d_ss <- d_ss %>% mutate(Pred = predict(DecisionTree,test_set,type='prob')[,1])
-d_ss <- d_ss %>% mutate(Pred = predict(DecisionTree,test_set,type='class'))
+#d_ss <- d_ss %>% mutate(Pred = predict(DecisionTree,test_set,type='class'))
 ```
 
 ```{r, echo=FALSE}
@@ -617,10 +619,10 @@ random_forest <- randomForest(formula = team1win ~.,
                         norm.votes=T,
                         keep.forest=TRUE)
 
-rf_predictions_prob <- predict(random_forest, test_set_rf, type='prob')
+#rf_predictions_prob <- predict(random_forest, test_set_rf, type='prob')
 rf_predictions_class <- predict(random_forest, test_set_rf, type='class')
-d_ss <- d_ss %>% mutate(Pred = rf_predictions_prob[,2])#For prob
-#d_ss <- d_ss %>% mutate(Pred = rf_predictions_class)
+#d_ss <- d_ss %>% mutate(Pred = rf_predictions_prob[,2])#For prob
+d_ss <- d_ss %>% mutate(Pred = rf_predictions_class)
 # 
 # cf <- confusionMatrix(factor(df_rf_predictions), factor(rf_test$target), positive="1", dnn = c("Prediction", "True values"))
 # draw_confusion_matrix(cf)
@@ -628,8 +630,10 @@ d_ss <- d_ss %>% mutate(Pred = rf_predictions_prob[,2])#For prob
 
 
 ```{r, echo=FALSE}
+library(caret)
 train_tree <- train[,-(1:4)]
-train_tree$team1win<- factor(train_tree$team1win, labels=c(0,1))
+#train_tree$team1win<- factor(train_tree$team1win, labels=c(0,1))
+train_tree$team1win<- factor(train_tree$team1win, labels=c("win","loss"))#not for neuralnet
 
 # Example of Bagging algorithms
 control <- trainControl(method="repeatedcv", number=10, repeats=3)
@@ -648,37 +652,36 @@ dotplot(bagging_results)
 ```
 
 ```{r, echo=FALSE}
+
 # Example of Stacking algorithms
 # create submodels
 train_ensemble <- train_tree
+train_ensemble$diff_rank <- NULL
+train_ensemble$elo_diff <- NULL
 train_ensemble$team1win<- factor(train_ensemble$team1win, labels=c("win","loss"))#not for neuralnet
 
 library(caretEnsemble)
-control <- trainControl(method="repeatedcv", number=10, repeats=3, savePredictions=TRUE, classProbs=TRUE,summaryFunction = mnLogLoss)
-algorithmList <- c('lda', 'rpart', 'glm', 'knn', 'svmRadial')
+control <- trainControl(method="repeatedcv", number=10, repeats=10, savePredictions='all', classProbs=TRUE,summaryFunction = mnLogLoss)
+algorithmList <- c('lda', 'glm', 'svmRadial')#knn disaster
 #algorithmList <- c('rpart', 'glm','svmRadial')
 set.seed(7)
+metric <- "logLoss"
 models <- caretList(team1win~., data=train_ensemble, trControl=control, methodList=algorithmList, metric=metric)
+
+
+
+greedy_ensemble <- caretEnsemble(
+  models, 
+  metric="logLoss",
+  trControl=control)
+summary(greedy_ensemble)
+
+kable(modelCor(resamples(models)))
+
+summary(greedy_ensemble)
 results <- resamples(models)
 summary(results)
 dotplot(results)
-```
-
-
-```{r, echo=FALSE}
-# stack using glm
-stackControl <- trainControl(method="repeatedcv", number=10, repeats=3, savePredictions=TRUE, classProbs=TRUE)
-set.seed(seed)
-stack.glm <- caretStack(models, method="glm", metric="Accuracy", trControl=stackControl)
-print(stack.glm)
-stack_glm_pred <- predict(stack.glm, newdata= d_ss_tree, type='prob')
-d_ss <- d_ss %>% mutate(Pred = stack_glm_pred)
-
-# stack using random forest
-set.seed(seed)
-stack.rf <- caretStack(models, method="rf", metric="Accuracy", trControl=stackControl)
-print(stack.rf)
-stack_predictions <- predict(stack.rf, newdata= d_ss_tree, type='prob')
-d_ss <- d_ss %>% mutate(Pred = stack_predictions)
-
+ensemble_pred <- predict(greedy_ensemble, newdata=test_set,type='prob')
+d_ss <- d_ss %>% mutate(Pred = ensemble_pred)#F
 ```
